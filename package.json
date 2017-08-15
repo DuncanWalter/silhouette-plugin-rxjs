@@ -1,6 +1,6 @@
 {
   "name": "silhouette-plugin-rxjs",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A silhouette plugin adding rxjs observable support.",
   "main": "dist/index.bundle.js",
   "scripts": {
