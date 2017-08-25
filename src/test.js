@@ -4,10 +4,10 @@ import rxjsPlugin from './index.js'
 const sil = create( rxjsPlugin() );
 
 tap.test('rxjsPlugin tests', t => {
-    t.true(sil);
+    t.true(sil);// 1
     sil.define({ a: 3, b: { c: 1, d: 4 }});
-    t.true(sil.a);
-    t.true(sil.b.c);
+    t.true(sil.a); // 2
+    t.true(sil.b.c); // 3
     
     let incra = 0;
     let incrb = 0;
@@ -19,28 +19,30 @@ tap.test('rxjsPlugin tests', t => {
     sil.a.asObservable().subscribe(val => incra++);
     sil.b.asObservable().subscribe(val => incrb++);
 
-    t.same(a, 3);
+    t.same(a, 3); // 4
     let aa = incra;
     let bb = incrb;
 
-    sil.a.define({e:4});
-    t.deepEqual(a, {e:4});
-    t.true(incra > aa);
+    sil.a.extend('incra', i => i + 1);
+    sil.dispatch('incra', {});
+    t.deepEqual(a, 4); // 5
+    t.true(incra > aa); // 6
     aa = incra;
-    t.true(incrb == bb);
+    t.true(incrb == bb); // 7
 
     sil.b.define([10, 20, 30], 'c');
-    t.same(incra, aa);
-    t.true(incrb > bb);
-    t.deepEqual(b, {c: [10, 20, 30], d: 4});
-
+    t.same(incra, aa);// 8
+    t.true(incrb > bb);// 9
+    t.deepEqual(b, {c: [10, 20, 30], d: 4}); //  10
+    
     sil.b.extend('whatever', state => {
         state.c.push(1);
         return state;
     });
     sil.b.dispatch('whatever', {});
 
-    t.true(b.c[3]);
+    t.true(b.c[3]); // 11
+
 
     t.end();
     
