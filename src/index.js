@@ -6,10 +6,9 @@ import { symbols } from 'silhouette-core'
 // non colliding instance props are important 
 const __stream__ = Symbol('stream'); 
 
-
 // middleware for plugging in rxjs- not too difficult, 
 // even with lazy BehaviorSubjects for performance
-let f = function(settings){ 
+export default function(settings){ 
     return {
         prototype: {
             // State changes result in push calls which are designed to
@@ -27,7 +26,7 @@ let f = function(settings){
                 }
                 // shuts down child nodes upon stream termination here
                 if(done){
-                    Reflect.ownKeys(this).forEach(key => this[key][symbols.__push__]({ done }));
+                    Object.keys(this).forEach(key => this[key][symbols.__push__]({ done }));
                 }
             },
             // we need to add a method for accessing the streams as an outsider.
@@ -43,5 +42,3 @@ let f = function(settings){
         }
     }
 };
-
-export default f;
