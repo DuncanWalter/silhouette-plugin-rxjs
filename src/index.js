@@ -1,11 +1,11 @@
 import { BehaviorSubject } from 'rxjs/BehaviorSubject'
 
 // TODO schedule pushes for after reducer returns
+import { symbols } from 'silhouette-core'
 
 // non colliding instance props are important 
 const __stream__ = Symbol('stream'); 
 
-import { symbols } from 'silhouette-core'
 
 // middleware for plugging in rxjs- not too difficult, 
 // even with lazy BehaviorSubjects for performance

@@ -40,7 +40,7 @@ const base = {
         // in a node environment for accurate code coverage reporting.
         a[d] = d;
         return a;
-    }, {'rxjs/BehaviorSubject':'rxjs/BehaviorSubject'}),
+    }, {}),
 };
 
 module.exports = function(ext){

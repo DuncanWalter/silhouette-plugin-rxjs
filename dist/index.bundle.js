@@ -1,6 +1,6 @@
 (function webpackUniversalModuleDefinition(root, factory) {
-    if (typeof exports === "object" && typeof module === "object") module.exports = factory(require("rxjs/BehaviorSubject")); else if (typeof define === "function" && define.amd) define([ "rxjs/BehaviorSubject" ], factory); else if (typeof exports === "object") exports["silhouette"] = factory(require("rxjs/BehaviorSubject")); else root["silhouette"] = factory(root["rxjs/BehaviorSubject"]);
-})(this, function(__WEBPACK_EXTERNAL_MODULE_1__) {
+    if (typeof exports === "object" && typeof module === "object") module.exports = factory(require("silhouette-core")); else if (typeof define === "function" && define.amd) define([ "silhouette-core" ], factory); else if (typeof exports === "object") exports["silhouette"] = factory(require("silhouette-core")); else root["silhouette"] = factory(root["silhouette-core"]);
+})(this, function(__WEBPACK_EXTERNAL_MODULE_20__) {
     return function(modules) {
         var installedModules = {};
         function __webpack_require__(moduleId) {
@@ -40,13 +40,415 @@
             return Object.prototype.hasOwnProperty.call(object, property);
         };
         __webpack_require__.p = "";
-        return __webpack_require__(__webpack_require__.s = 0);
+        return __webpack_require__(__webpack_require__.s = 8);
     }([ function(module, exports, __webpack_require__) {
+        "use strict";
+        (function(global) {
+            var __window = typeof window !== "undefined" && window;
+            var __self = typeof self !== "undefined" && typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope && self;
+            var __global = typeof global !== "undefined" && global;
+            var _root = __window || __global || __self;
+            exports.root = _root;
+            (function() {
+                if (!_root) {
+                    throw new Error("RxJS could not find any global context (window, self, global)");
+                }
+            })();
+        }).call(exports, __webpack_require__(12));
+    }, function(module, exports, __webpack_require__) {
+        "use strict";
+        var isArray_1 = __webpack_require__(14);
+        var isObject_1 = __webpack_require__(15);
+        var isFunction_1 = __webpack_require__(4);
+        var tryCatch_1 = __webpack_require__(16);
+        var errorObject_1 = __webpack_require__(5);
+        var UnsubscriptionError_1 = __webpack_require__(17);
+        var Subscription = function() {
+            function Subscription(unsubscribe) {
+                this.closed = false;
+                this._parent = null;
+                this._parents = null;
+                this._subscriptions = null;
+                if (unsubscribe) {
+                    this._unsubscribe = unsubscribe;
+                }
+            }
+            Subscription.prototype.unsubscribe = function() {
+                var hasErrors = false;
+                var errors;
+                if (this.closed) {
+                    return;
+                }
+                var _a = this, _parent = _a._parent, _parents = _a._parents, _unsubscribe = _a._unsubscribe, _subscriptions = _a._subscriptions;
+                this.closed = true;
+                this._parent = null;
+                this._parents = null;
+                this._subscriptions = null;
+                var index = -1;
+                var len = _parents ? _parents.length : 0;
+                while (_parent) {
+                    _parent.remove(this);
+                    _parent = ++index < len && _parents[index] || null;
+                }
+                if (isFunction_1.isFunction(_unsubscribe)) {
+                    var trial = tryCatch_1.tryCatch(_unsubscribe).call(this);
+                    if (trial === errorObject_1.errorObject) {
+                        hasErrors = true;
+                        errors = errors || (errorObject_1.errorObject.e instanceof UnsubscriptionError_1.UnsubscriptionError ? flattenUnsubscriptionErrors(errorObject_1.errorObject.e.errors) : [ errorObject_1.errorObject.e ]);
+                    }
+                }
+                if (isArray_1.isArray(_subscriptions)) {
+                    index = -1;
+                    len = _subscriptions.length;
+                    while (++index < len) {
+                        var sub = _subscriptions[index];
+                        if (isObject_1.isObject(sub)) {
+                            var trial = tryCatch_1.tryCatch(sub.unsubscribe).call(sub);
+                            if (trial === errorObject_1.errorObject) {
+                                hasErrors = true;
+                                errors = errors || [];
+                                var err = errorObject_1.errorObject.e;
+                                if (err instanceof UnsubscriptionError_1.UnsubscriptionError) {
+                                    errors = errors.concat(flattenUnsubscriptionErrors(err.errors));
+                                } else {
+                                    errors.push(err);
+                                }
+                            }
+                        }
+                    }
+                }
+                if (hasErrors) {
+                    throw new UnsubscriptionError_1.UnsubscriptionError(errors);
+                }
+            };
+            Subscription.prototype.add = function(teardown) {
+                if (!teardown || teardown === Subscription.EMPTY) {
+                    return Subscription.EMPTY;
+                }
+                if (teardown === this) {
+                    return this;
+                }
+                var subscription = teardown;
+                switch (typeof teardown) {
+                  case "function":
+                    subscription = new Subscription(teardown);
+
+                  case "object":
+                    if (subscription.closed || typeof subscription.unsubscribe !== "function") {
+                        return subscription;
+                    } else if (this.closed) {
+                        subscription.unsubscribe();
+                        return subscription;
+                    } else if (typeof subscription._addParent !== "function") {
+                        var tmp = subscription;
+                        subscription = new Subscription();
+                        subscription._subscriptions = [ tmp ];
+                    }
+                    break;
+
+                  default:
+                    throw new Error("unrecognized teardown " + teardown + " added to Subscription.");
+                }
+                var subscriptions = this._subscriptions || (this._subscriptions = []);
+                subscriptions.push(subscription);
+                subscription._addParent(this);
+                return subscription;
+            };
+            Subscription.prototype.remove = function(subscription) {
+                var subscriptions = this._subscriptions;
+                if (subscriptions) {
+                    var subscriptionIndex = subscriptions.indexOf(subscription);
+                    if (subscriptionIndex !== -1) {
+                        subscriptions.splice(subscriptionIndex, 1);
+                    }
+                }
+            };
+            Subscription.prototype._addParent = function(parent) {
+                var _a = this, _parent = _a._parent, _parents = _a._parents;
+                if (!_parent || _parent === parent) {
+                    this._parent = parent;
+                } else if (!_parents) {
+                    this._parents = [ parent ];
+                } else if (_parents.indexOf(parent) === -1) {
+                    _parents.push(parent);
+                }
+            };
+            Subscription.EMPTY = function(empty) {
+                empty.closed = true;
+                return empty;
+            }(new Subscription());
+            return Subscription;
+        }();
+        exports.Subscription = Subscription;
+        function flattenUnsubscriptionErrors(errors) {
+            return errors.reduce(function(errs, err) {
+                return errs.concat(err instanceof UnsubscriptionError_1.UnsubscriptionError ? err.errors : err);
+            }, []);
+        }
+    }, function(module, exports, __webpack_require__) {
+        "use strict";
+        var root_1 = __webpack_require__(0);
+        var Symbol = root_1.root.Symbol;
+        exports.rxSubscriber = typeof Symbol === "function" && typeof Symbol.for === "function" ? Symbol.for("rxSubscriber") : "@@rxSubscriber";
+        exports.$$rxSubscriber = exports.rxSubscriber;
+    }, function(module, exports, __webpack_require__) {
+        "use strict";
+        var __extends = undefined && undefined.__extends || function(d, b) {
+            for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+            function __() {
+                this.constructor = d;
+            }
+            d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+        };
+        var isFunction_1 = __webpack_require__(4);
+        var Subscription_1 = __webpack_require__(1);
+        var Observer_1 = __webpack_require__(6);
+        var rxSubscriber_1 = __webpack_require__(2);
+        var Subscriber = function(_super) {
+            __extends(Subscriber, _super);
+            function Subscriber(destinationOrNext, error, complete) {
+                _super.call(this);
+                this.syncErrorValue = null;
+                this.syncErrorThrown = false;
+                this.syncErrorThrowable = false;
+                this.isStopped = false;
+                switch (arguments.length) {
+                  case 0:
+                    this.destination = Observer_1.empty;
+                    break;
+
+                  case 1:
+                    if (!destinationOrNext) {
+                        this.destination = Observer_1.empty;
+                        break;
+                    }
+                    if (typeof destinationOrNext === "object") {
+                        if (destinationOrNext instanceof Subscriber) {
+                            this.destination = destinationOrNext;
+                            this.destination.add(this);
+                        } else {
+                            this.syncErrorThrowable = true;
+                            this.destination = new SafeSubscriber(this, destinationOrNext);
+                        }
+                        break;
+                    }
+
+                  default:
+                    this.syncErrorThrowable = true;
+                    this.destination = new SafeSubscriber(this, destinationOrNext, error, complete);
+                    break;
+                }
+            }
+            Subscriber.prototype[rxSubscriber_1.rxSubscriber] = function() {
+                return this;
+            };
+            Subscriber.create = function(next, error, complete) {
+                var subscriber = new Subscriber(next, error, complete);
+                subscriber.syncErrorThrowable = false;
+                return subscriber;
+            };
+            Subscriber.prototype.next = function(value) {
+                if (!this.isStopped) {
+                    this._next(value);
+                }
+            };
+            Subscriber.prototype.error = function(err) {
+                if (!this.isStopped) {
+                    this.isStopped = true;
+                    this._error(err);
+                }
+            };
+            Subscriber.prototype.complete = function() {
+                if (!this.isStopped) {
+                    this.isStopped = true;
+                    this._complete();
+                }
+            };
+            Subscriber.prototype.unsubscribe = function() {
+                if (this.closed) {
+                    return;
+                }
+                this.isStopped = true;
+                _super.prototype.unsubscribe.call(this);
+            };
+            Subscriber.prototype._next = function(value) {
+                this.destination.next(value);
+            };
+            Subscriber.prototype._error = function(err) {
+                this.destination.error(err);
+                this.unsubscribe();
+            };
+            Subscriber.prototype._complete = function() {
+                this.destination.complete();
+                this.unsubscribe();
+            };
+            Subscriber.prototype._unsubscribeAndRecycle = function() {
+                var _a = this, _parent = _a._parent, _parents = _a._parents;
+                this._parent = null;
+                this._parents = null;
+                this.unsubscribe();
+                this.closed = false;
+                this.isStopped = false;
+                this._parent = _parent;
+                this._parents = _parents;
+                return this;
+            };
+            return Subscriber;
+        }(Subscription_1.Subscription);
+        exports.Subscriber = Subscriber;
+        var SafeSubscriber = function(_super) {
+            __extends(SafeSubscriber, _super);
+            function SafeSubscriber(_parentSubscriber, observerOrNext, error, complete) {
+                _super.call(this);
+                this._parentSubscriber = _parentSubscriber;
+                var next;
+                var context = this;
+                if (isFunction_1.isFunction(observerOrNext)) {
+                    next = observerOrNext;
+                } else if (observerOrNext) {
+                    next = observerOrNext.next;
+                    error = observerOrNext.error;
+                    complete = observerOrNext.complete;
+                    if (observerOrNext !== Observer_1.empty) {
+                        context = Object.create(observerOrNext);
+                        if (isFunction_1.isFunction(context.unsubscribe)) {
+                            this.add(context.unsubscribe.bind(context));
+                        }
+                        context.unsubscribe = this.unsubscribe.bind(this);
+                    }
+                }
+                this._context = context;
+                this._next = next;
+                this._error = error;
+                this._complete = complete;
+            }
+            SafeSubscriber.prototype.next = function(value) {
+                if (!this.isStopped && this._next) {
+                    var _parentSubscriber = this._parentSubscriber;
+                    if (!_parentSubscriber.syncErrorThrowable) {
+                        this.__tryOrUnsub(this._next, value);
+                    } else if (this.__tryOrSetError(_parentSubscriber, this._next, value)) {
+                        this.unsubscribe();
+                    }
+                }
+            };
+            SafeSubscriber.prototype.error = function(err) {
+                if (!this.isStopped) {
+                    var _parentSubscriber = this._parentSubscriber;
+                    if (this._error) {
+                        if (!_parentSubscriber.syncErrorThrowable) {
+                            this.__tryOrUnsub(this._error, err);
+                            this.unsubscribe();
+                        } else {
+                            this.__tryOrSetError(_parentSubscriber, this._error, err);
+                            this.unsubscribe();
+                        }
+                    } else if (!_parentSubscriber.syncErrorThrowable) {
+                        this.unsubscribe();
+                        throw err;
+                    } else {
+                        _parentSubscriber.syncErrorValue = err;
+                        _parentSubscriber.syncErrorThrown = true;
+                        this.unsubscribe();
+                    }
+                }
+            };
+            SafeSubscriber.prototype.complete = function() {
+                var _this = this;
+                if (!this.isStopped) {
+                    var _parentSubscriber = this._parentSubscriber;
+                    if (this._complete) {
+                        var wrappedComplete = function() {
+                            return _this._complete.call(_this._context);
+                        };
+                        if (!_parentSubscriber.syncErrorThrowable) {
+                            this.__tryOrUnsub(wrappedComplete);
+                            this.unsubscribe();
+                        } else {
+                            this.__tryOrSetError(_parentSubscriber, wrappedComplete);
+                            this.unsubscribe();
+                        }
+                    } else {
+                        this.unsubscribe();
+                    }
+                }
+            };
+            SafeSubscriber.prototype.__tryOrUnsub = function(fn, value) {
+                try {
+                    fn.call(this._context, value);
+                } catch (err) {
+                    this.unsubscribe();
+                    throw err;
+                }
+            };
+            SafeSubscriber.prototype.__tryOrSetError = function(parent, fn, value) {
+                try {
+                    fn.call(this._context, value);
+                } catch (err) {
+                    parent.syncErrorValue = err;
+                    parent.syncErrorThrown = true;
+                    return true;
+                }
+                return false;
+            };
+            SafeSubscriber.prototype._unsubscribe = function() {
+                var _parentSubscriber = this._parentSubscriber;
+                this._context = null;
+                this._parentSubscriber = null;
+                _parentSubscriber.unsubscribe();
+            };
+            return SafeSubscriber;
+        }(Subscriber);
+    }, function(module, exports, __webpack_require__) {
+        "use strict";
+        function isFunction(x) {
+            return typeof x === "function";
+        }
+        exports.isFunction = isFunction;
+    }, function(module, exports, __webpack_require__) {
+        "use strict";
+        exports.errorObject = {
+            e: {}
+        };
+    }, function(module, exports, __webpack_require__) {
+        "use strict";
+        exports.empty = {
+            closed: true,
+            next: function(value) {},
+            error: function(err) {
+                throw err;
+            },
+            complete: function() {}
+        };
+    }, function(module, exports, __webpack_require__) {
+        "use strict";
+        var __extends = undefined && undefined.__extends || function(d, b) {
+            for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+            function __() {
+                this.constructor = d;
+            }
+            d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+        };
+        var ObjectUnsubscribedError = function(_super) {
+            __extends(ObjectUnsubscribedError, _super);
+            function ObjectUnsubscribedError() {
+                var err = _super.call(this, "object unsubscribed");
+                this.name = err.name = "ObjectUnsubscribedError";
+                this.stack = err.stack;
+                this.message = err.message;
+            }
+            return ObjectUnsubscribedError;
+        }(Error);
+        exports.ObjectUnsubscribedError = ObjectUnsubscribedError;
+    }, function(module, exports, __webpack_require__) {
         "use strict";
         Object.defineProperty(exports, "__esModule", {
             value: true
         });
-        exports.default = function(settings) {
+        var _BehaviorSubject = __webpack_require__(9);
+        var _silhouetteCore = __webpack_require__(20);
+        const __stream__ = Symbol("stream");
+        let f = function(settings) {
             return {
                 prototype: {
                     [_silhouetteCore.symbols.__push__]: next => (function({value: value, done: done}) {
@@ -81,664 +483,435 @@
                 }
             };
         };
-        var _BehaviorSubject = __webpack_require__(1);
-        var _silhouetteCore = __webpack_require__(2);
-        const __stream__ = Symbol("stream");
+        exports.default = f;
+    }, function(module, exports, __webpack_require__) {
+        "use strict";
+        var __extends = undefined && undefined.__extends || function(d, b) {
+            for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+            function __() {
+                this.constructor = d;
+            }
+            d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+        };
+        var Subject_1 = __webpack_require__(10);
+        var ObjectUnsubscribedError_1 = __webpack_require__(7);
+        var BehaviorSubject = function(_super) {
+            __extends(BehaviorSubject, _super);
+            function BehaviorSubject(_value) {
+                _super.call(this);
+                this._value = _value;
+            }
+            Object.defineProperty(BehaviorSubject.prototype, "value", {
+                get: function() {
+                    return this.getValue();
+                },
+                enumerable: true,
+                configurable: true
+            });
+            BehaviorSubject.prototype._subscribe = function(subscriber) {
+                var subscription = _super.prototype._subscribe.call(this, subscriber);
+                if (subscription && !subscription.closed) {
+                    subscriber.next(this._value);
+                }
+                return subscription;
+            };
+            BehaviorSubject.prototype.getValue = function() {
+                if (this.hasError) {
+                    throw this.thrownError;
+                } else if (this.closed) {
+                    throw new ObjectUnsubscribedError_1.ObjectUnsubscribedError();
+                } else {
+                    return this._value;
+                }
+            };
+            BehaviorSubject.prototype.next = function(value) {
+                _super.prototype.next.call(this, this._value = value);
+            };
+            return BehaviorSubject;
+        }(Subject_1.Subject);
+        exports.BehaviorSubject = BehaviorSubject;
+    }, function(module, exports, __webpack_require__) {
+        "use strict";
+        var __extends = undefined && undefined.__extends || function(d, b) {
+            for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+            function __() {
+                this.constructor = d;
+            }
+            d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+        };
+        var Observable_1 = __webpack_require__(11);
+        var Subscriber_1 = __webpack_require__(3);
+        var Subscription_1 = __webpack_require__(1);
+        var ObjectUnsubscribedError_1 = __webpack_require__(7);
+        var SubjectSubscription_1 = __webpack_require__(19);
+        var rxSubscriber_1 = __webpack_require__(2);
+        var SubjectSubscriber = function(_super) {
+            __extends(SubjectSubscriber, _super);
+            function SubjectSubscriber(destination) {
+                _super.call(this, destination);
+                this.destination = destination;
+            }
+            return SubjectSubscriber;
+        }(Subscriber_1.Subscriber);
+        exports.SubjectSubscriber = SubjectSubscriber;
+        var Subject = function(_super) {
+            __extends(Subject, _super);
+            function Subject() {
+                _super.call(this);
+                this.observers = [];
+                this.closed = false;
+                this.isStopped = false;
+                this.hasError = false;
+                this.thrownError = null;
+            }
+            Subject.prototype[rxSubscriber_1.rxSubscriber] = function() {
+                return new SubjectSubscriber(this);
+            };
+            Subject.prototype.lift = function(operator) {
+                var subject = new AnonymousSubject(this, this);
+                subject.operator = operator;
+                return subject;
+            };
+            Subject.prototype.next = function(value) {
+                if (this.closed) {
+                    throw new ObjectUnsubscribedError_1.ObjectUnsubscribedError();
+                }
+                if (!this.isStopped) {
+                    var observers = this.observers;
+                    var len = observers.length;
+                    var copy = observers.slice();
+                    for (var i = 0; i < len; i++) {
+                        copy[i].next(value);
+                    }
+                }
+            };
+            Subject.prototype.error = function(err) {
+                if (this.closed) {
+                    throw new ObjectUnsubscribedError_1.ObjectUnsubscribedError();
+                }
+                this.hasError = true;
+                this.thrownError = err;
+                this.isStopped = true;
+                var observers = this.observers;
+                var len = observers.length;
+                var copy = observers.slice();
+                for (var i = 0; i < len; i++) {
+                    copy[i].error(err);
+                }
+                this.observers.length = 0;
+            };
+            Subject.prototype.complete = function() {
+                if (this.closed) {
+                    throw new ObjectUnsubscribedError_1.ObjectUnsubscribedError();
+                }
+                this.isStopped = true;
+                var observers = this.observers;
+                var len = observers.length;
+                var copy = observers.slice();
+                for (var i = 0; i < len; i++) {
+                    copy[i].complete();
+                }
+                this.observers.length = 0;
+            };
+            Subject.prototype.unsubscribe = function() {
+                this.isStopped = true;
+                this.closed = true;
+                this.observers = null;
+            };
+            Subject.prototype._trySubscribe = function(subscriber) {
+                if (this.closed) {
+                    throw new ObjectUnsubscribedError_1.ObjectUnsubscribedError();
+                } else {
+                    return _super.prototype._trySubscribe.call(this, subscriber);
+                }
+            };
+            Subject.prototype._subscribe = function(subscriber) {
+                if (this.closed) {
+                    throw new ObjectUnsubscribedError_1.ObjectUnsubscribedError();
+                } else if (this.hasError) {
+                    subscriber.error(this.thrownError);
+                    return Subscription_1.Subscription.EMPTY;
+                } else if (this.isStopped) {
+                    subscriber.complete();
+                    return Subscription_1.Subscription.EMPTY;
+                } else {
+                    this.observers.push(subscriber);
+                    return new SubjectSubscription_1.SubjectSubscription(this, subscriber);
+                }
+            };
+            Subject.prototype.asObservable = function() {
+                var observable = new Observable_1.Observable();
+                observable.source = this;
+                return observable;
+            };
+            Subject.create = function(destination, source) {
+                return new AnonymousSubject(destination, source);
+            };
+            return Subject;
+        }(Observable_1.Observable);
+        exports.Subject = Subject;
+        var AnonymousSubject = function(_super) {
+            __extends(AnonymousSubject, _super);
+            function AnonymousSubject(destination, source) {
+                _super.call(this);
+                this.destination = destination;
+                this.source = source;
+            }
+            AnonymousSubject.prototype.next = function(value) {
+                var destination = this.destination;
+                if (destination && destination.next) {
+                    destination.next(value);
+                }
+            };
+            AnonymousSubject.prototype.error = function(err) {
+                var destination = this.destination;
+                if (destination && destination.error) {
+                    this.destination.error(err);
+                }
+            };
+            AnonymousSubject.prototype.complete = function() {
+                var destination = this.destination;
+                if (destination && destination.complete) {
+                    this.destination.complete();
+                }
+            };
+            AnonymousSubject.prototype._subscribe = function(subscriber) {
+                var source = this.source;
+                if (source) {
+                    return this.source.subscribe(subscriber);
+                } else {
+                    return Subscription_1.Subscription.EMPTY;
+                }
+            };
+            return AnonymousSubject;
+        }(Subject);
+        exports.AnonymousSubject = AnonymousSubject;
+    }, function(module, exports, __webpack_require__) {
+        "use strict";
+        var root_1 = __webpack_require__(0);
+        var toSubscriber_1 = __webpack_require__(13);
+        var observable_1 = __webpack_require__(18);
+        var Observable = function() {
+            function Observable(subscribe) {
+                this._isScalar = false;
+                if (subscribe) {
+                    this._subscribe = subscribe;
+                }
+            }
+            Observable.prototype.lift = function(operator) {
+                var observable = new Observable();
+                observable.source = this;
+                observable.operator = operator;
+                return observable;
+            };
+            Observable.prototype.subscribe = function(observerOrNext, error, complete) {
+                var operator = this.operator;
+                var sink = toSubscriber_1.toSubscriber(observerOrNext, error, complete);
+                if (operator) {
+                    operator.call(sink, this.source);
+                } else {
+                    sink.add(this.source ? this._subscribe(sink) : this._trySubscribe(sink));
+                }
+                if (sink.syncErrorThrowable) {
+                    sink.syncErrorThrowable = false;
+                    if (sink.syncErrorThrown) {
+                        throw sink.syncErrorValue;
+                    }
+                }
+                return sink;
+            };
+            Observable.prototype._trySubscribe = function(sink) {
+                try {
+                    return this._subscribe(sink);
+                } catch (err) {
+                    sink.syncErrorThrown = true;
+                    sink.syncErrorValue = err;
+                    sink.error(err);
+                }
+            };
+            Observable.prototype.forEach = function(next, PromiseCtor) {
+                var _this = this;
+                if (!PromiseCtor) {
+                    if (root_1.root.Rx && root_1.root.Rx.config && root_1.root.Rx.config.Promise) {
+                        PromiseCtor = root_1.root.Rx.config.Promise;
+                    } else if (root_1.root.Promise) {
+                        PromiseCtor = root_1.root.Promise;
+                    }
+                }
+                if (!PromiseCtor) {
+                    throw new Error("no Promise impl found");
+                }
+                return new PromiseCtor(function(resolve, reject) {
+                    var subscription;
+                    subscription = _this.subscribe(function(value) {
+                        if (subscription) {
+                            try {
+                                next(value);
+                            } catch (err) {
+                                reject(err);
+                                subscription.unsubscribe();
+                            }
+                        } else {
+                            next(value);
+                        }
+                    }, reject, resolve);
+                });
+            };
+            Observable.prototype._subscribe = function(subscriber) {
+                return this.source.subscribe(subscriber);
+            };
+            Observable.prototype[observable_1.observable] = function() {
+                return this;
+            };
+            Observable.create = function(subscribe) {
+                return new Observable(subscribe);
+            };
+            return Observable;
+        }();
+        exports.Observable = Observable;
+    }, function(module, exports, __webpack_require__) {
+        "use strict";
+        var g;
+        g = function() {
+            return this;
+        }();
+        try {
+            g = g || Function("return this")() || (1, eval)("this");
+        } catch (e) {
+            if (typeof window === "object") g = window;
+        }
+        module.exports = g;
+    }, function(module, exports, __webpack_require__) {
+        "use strict";
+        var Subscriber_1 = __webpack_require__(3);
+        var rxSubscriber_1 = __webpack_require__(2);
+        var Observer_1 = __webpack_require__(6);
+        function toSubscriber(nextOrObserver, error, complete) {
+            if (nextOrObserver) {
+                if (nextOrObserver instanceof Subscriber_1.Subscriber) {
+                    return nextOrObserver;
+                }
+                if (nextOrObserver[rxSubscriber_1.rxSubscriber]) {
+                    return nextOrObserver[rxSubscriber_1.rxSubscriber]();
+                }
+            }
+            if (!nextOrObserver && !error && !complete) {
+                return new Subscriber_1.Subscriber(Observer_1.empty);
+            }
+            return new Subscriber_1.Subscriber(nextOrObserver, error, complete);
+        }
+        exports.toSubscriber = toSubscriber;
+    }, function(module, exports, __webpack_require__) {
+        "use strict";
+        exports.isArray = Array.isArray || function(x) {
+            return x && typeof x.length === "number";
+        };
+    }, function(module, exports, __webpack_require__) {
+        "use strict";
+        function isObject(x) {
+            return x != null && typeof x === "object";
+        }
+        exports.isObject = isObject;
+    }, function(module, exports, __webpack_require__) {
+        "use strict";
+        var errorObject_1 = __webpack_require__(5);
+        var tryCatchTarget;
+        function tryCatcher() {
+            try {
+                return tryCatchTarget.apply(this, arguments);
+            } catch (e) {
+                errorObject_1.errorObject.e = e;
+                return errorObject_1.errorObject;
+            }
+        }
+        function tryCatch(fn) {
+            tryCatchTarget = fn;
+            return tryCatcher;
+        }
+        exports.tryCatch = tryCatch;
+    }, function(module, exports, __webpack_require__) {
+        "use strict";
+        var __extends = undefined && undefined.__extends || function(d, b) {
+            for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+            function __() {
+                this.constructor = d;
+            }
+            d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+        };
+        var UnsubscriptionError = function(_super) {
+            __extends(UnsubscriptionError, _super);
+            function UnsubscriptionError(errors) {
+                _super.call(this);
+                this.errors = errors;
+                var err = Error.call(this, errors ? errors.length + " errors occurred during unsubscription:\n  " + errors.map(function(err, i) {
+                    return i + 1 + ") " + err.toString();
+                }).join("\n  ") : "");
+                this.name = err.name = "UnsubscriptionError";
+                this.stack = err.stack;
+                this.message = err.message;
+            }
+            return UnsubscriptionError;
+        }(Error);
+        exports.UnsubscriptionError = UnsubscriptionError;
+    }, function(module, exports, __webpack_require__) {
+        "use strict";
+        var root_1 = __webpack_require__(0);
+        function getSymbolObservable(context) {
+            var $$observable;
+            var Symbol = context.Symbol;
+            if (typeof Symbol === "function") {
+                if (Symbol.observable) {
+                    $$observable = Symbol.observable;
+                } else {
+                    $$observable = Symbol("observable");
+                    Symbol.observable = $$observable;
+                }
+            } else {
+                $$observable = "@@observable";
+            }
+            return $$observable;
+        }
+        exports.getSymbolObservable = getSymbolObservable;
+        exports.observable = getSymbolObservable(root_1.root);
+        exports.$$observable = exports.observable;
+    }, function(module, exports, __webpack_require__) {
+        "use strict";
+        var __extends = undefined && undefined.__extends || function(d, b) {
+            for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+            function __() {
+                this.constructor = d;
+            }
+            d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+        };
+        var Subscription_1 = __webpack_require__(1);
+        var SubjectSubscription = function(_super) {
+            __extends(SubjectSubscription, _super);
+            function SubjectSubscription(subject, subscriber) {
+                _super.call(this);
+                this.subject = subject;
+                this.subscriber = subscriber;
+                this.closed = false;
+            }
+            SubjectSubscription.prototype.unsubscribe = function() {
+                if (this.closed) {
+                    return;
+                }
+                this.closed = true;
+                var subject = this.subject;
+                var observers = subject.observers;
+                this.subject = null;
+                if (!observers || observers.length === 0 || subject.isStopped || subject.closed) {
+                    return;
+                }
+                var subscriberIndex = observers.indexOf(this.subscriber);
+                if (subscriberIndex !== -1) {
+                    observers.splice(subscriberIndex, 1);
+                }
+            };
+            return SubjectSubscription;
+        }(Subscription_1.Subscription);
+        exports.SubjectSubscription = SubjectSubscription;
     }, function(module, exports) {
-        module.exports = __WEBPACK_EXTERNAL_MODULE_1__;
-    }, function(module, exports, __webpack_require__) {
-        "use strict";
-        (function webpackUniversalModuleDefinition(root, factory) {
-            if (true) module.exports = factory(__webpack_require__(3)); else if (typeof define === "function" && define.amd) define([ "vitrarius" ], factory); else if (typeof exports === "object") exports["silhouette"] = factory(require("vitrarius")); else root["silhouette"] = factory(root["vitrarius"]);
-        })(undefined, function(__WEBPACK_EXTERNAL_MODULE_0__) {
-            return function(modules) {
-                var installedModules = {};
-                function __webpack_require__(moduleId) {
-                    if (installedModules[moduleId]) {
-                        return installedModules[moduleId].exports;
-                    }
-                    var module = installedModules[moduleId] = {
-                        i: moduleId,
-                        l: false,
-                        exports: {}
-                    };
-                    modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
-                    module.l = true;
-                    return module.exports;
-                }
-                __webpack_require__.m = modules;
-                __webpack_require__.c = installedModules;
-                __webpack_require__.d = function(exports, name, getter) {
-                    if (!__webpack_require__.o(exports, name)) {
-                        Object.defineProperty(exports, name, {
-                            configurable: false,
-                            enumerable: true,
-                            get: getter
-                        });
-                    }
-                };
-                __webpack_require__.n = function(module) {
-                    var getter = module && module.__esModule ? function getDefault() {
-                        return module["default"];
-                    } : function getModuleExports() {
-                        return module;
-                    };
-                    __webpack_require__.d(getter, "a", getter);
-                    return getter;
-                };
-                __webpack_require__.o = function(object, property) {
-                    return Object.prototype.hasOwnProperty.call(object, property);
-                };
-                __webpack_require__.p = "";
-                return __webpack_require__(__webpack_require__.s = 2);
-            }([ function(module, exports) {
-                module.exports = __WEBPACK_EXTERNAL_MODULE_0__;
-            }, function(module, exports, __webpack_require__) {
-                "use strict";
-                Object.defineProperty(exports, "__esModule", {
-                    value: true
-                });
-                const __DEFINE__ = exports.__DEFINE__ = Symbol("__DEFINE__");
-                const __REMOVE__ = exports.__REMOVE__ = Symbol("__REMOVE__");
-                const __path__ = exports.__path__ = Symbol("path");
-                const __reducers__ = exports.__reducers__ = Symbol("reducers");
-                const __push__ = exports.__push__ = Symbol("push");
-                const __store__ = exports.__store__ = Symbol("store");
-                const __root__ = exports.__root__ = Symbol("root");
-                const __create__ = exports.__create__ = Symbol("create");
-            }, function(module, exports, __webpack_require__) {
-                "use strict";
-                Object.defineProperty(exports, "__esModule", {
-                    value: true
-                });
-                exports.symbols = undefined;
-                exports.create = create;
-                var _vitrarius = __webpack_require__(0);
-                var _symbols = __webpack_require__(1);
-                var __symbols__ = _interopRequireWildcard(_symbols);
-                var _reducer = __webpack_require__(3);
-                function _interopRequireWildcard(obj) {
-                    if (obj && obj.__esModule) {
-                        return obj;
-                    } else {
-                        var newObj = {};
-                        if (obj != null) {
-                            for (var key in obj) {
-                                if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key];
-                            }
-                        }
-                        newObj.default = obj;
-                        return newObj;
-                    }
-                }
-                let symbols = exports.symbols = __symbols__;
-                function diff(pat, trg) {
-                    if (!(pat instanceof Object || pat instanceof Array)) {
-                        return trg !== undefined;
-                    }
-                    return Object.keys(pat).reduce((a, k) => a && trg[k] && diff(pat[k], trg[k]), trg !== undefined);
-                }
-                function syncQueue() {
-                    let active = false;
-                    let next = {};
-                    let last = next;
-                    return {
-                        enqueue(action) {
-                            last.value = action;
-                            last.next = {};
-                            last = last.next;
-                        },
-                        forEach(fun) {
-                            if (active) {
-                                return;
-                            }
-                            active = true;
-                            while (next.next) {
-                                fun(next.value);
-                                next = next.next;
-                            }
-                            active = false;
-                        }
-                    };
-                }
-                function defineSilhouette() {
-                    let actionQueue = syncQueue();
-                    class Silhouette {
-                        [_symbols.__create__](parent, member) {
-                            let sil = new Silhouette();
-                            sil[_symbols.__path__] = parent ? [ ...parent[_symbols.__path__], member ] : [];
-                            sil[_symbols.__reducers__] = {};
-                            if (parent !== undefined) {
-                                parent[member] = sil;
-                            }
-                            return sil;
-                        }
-                        define(val, ...path) {
-                            if (!(0, _vitrarius.view)((0, _vitrarius.compose)(...path.map(k => (0, _vitrarius.lens)(o => o[k], (o, r) => r)), diff.bind(null, val)), this)) {
-                                actionQueue.enqueue({
-                                    type: "__DEFINE__",
-                                    [_symbols.__DEFINE__]: true,
-                                    val: val,
-                                    path: [ ...this[_symbols.__path__], ...path ]
-                                });
-                                actionQueue.forEach(this[_symbols.__store__].dispatch);
-                            }
-                        }
-                        remove(...path) {
-                            actionQueue.enqueue({
-                                type: "__REMOVE__",
-                                [_symbols.__REMOVE__]: true,
-                                path: [ ...this[_symbols.__path__], ...path ]
-                            });
-                            actionQueue.forEach(this[_symbols.__store__].dispatch);
-                        }
-                        dispatch(type, payload) {
-                            actionQueue.enqueue(Object.assign({
-                                type: type
-                            }, payload));
-                            actionQueue.forEach(this[_symbols.__store__].dispatch);
-                        }
-                        extend(type, reducer, compose = false) {
-                            this[_symbols.__reducers__][type] = reducer;
-                        }
-                        [_symbols.__push__]() {}
-                    }
-                    return Silhouette;
-                }
-                function applyPlugin(base, plugin) {
-                    Reflect.ownKeys(plugin).forEach(key => {
-                        if (plugin[key] instanceof Function) {
-                            base[key] = plugin[key](base[key]);
-                        } else if (plugin[key] instanceof Object) {
-                            base[key] = applyPlugin(base[key] || {}, plugin[key]);
-                        } else {
-                            throw new Error("The plugin provided contained terminal properties which were not middleware functions.");
-                        }
-                    });
-                    return base;
-                }
-                function create(...plugins) {
-                    let Silhouette = defineSilhouette();
-                    let namespace = {
-                        Silhouette: Silhouette,
-                        prototype: Silhouette.prototype,
-                        reducer: _reducer.reducer.bind(Silhouette),
-                        createStore(reducer) {
-                            let state = {};
-                            return {
-                                dispatch(action) {
-                                    state = reducer(state, action);
-                                }
-                            };
-                        },
-                        createSil(store) {
-                            let sil = namespace.Silhouette.prototype[_symbols.__create__]();
-                            namespace.Silhouette.prototype[_symbols.__store__] = store;
-                            namespace.Silhouette.prototype[_symbols.__root__] = sil;
-                            namespace.Silhouette.created = true;
-                            return sil;
-                        }
-                    };
-                    plugins.reverse().forEach(plugin => {
-                        applyPlugin(namespace, plugin, namespace);
-                    });
-                    let store = namespace.createStore(namespace.reducer);
-                    return namespace.createSil(store);
-                }
-            }, function(module, exports, __webpack_require__) {
-                "use strict";
-                Object.defineProperty(exports, "__esModule", {
-                    value: true
-                });
-                exports.reducer = reducer;
-                var _vitrarius = __webpack_require__(0);
-                var _symbols = __webpack_require__(1);
-                var _optics = __webpack_require__(4);
-                function reducer(state = {}, action) {
-                    if (!this.created) {
-                        return state;
-                    }
-                    let path, payload, val, sil = this.prototype[_symbols.__root__];
-                    switch (true) {
-                      case action[_symbols.__DEFINE__]:
-                        ({val: val, path: path} = action);
-                        let _define = (0, _vitrarius.compose)(...path.map(_optics.traverse), o => Object.assign(o, {
-                            val: val
-                        }), _optics.assert);
-                        return (0, _vitrarius.view)(_define, {
-                            state: state,
-                            sil: sil
-                        });
-
-                      case action[_symbols.__REMOVE__]:
-                        ({path: path} = action);
-                        let eraser = (0, _optics.erase)(path.pop());
-                        let remove = (0, _vitrarius.compose)(...path.map(_optics.traverse), eraser);
-                        return (0, _vitrarius.view)(remove, {
-                            state: state,
-                            sil: sil
-                        });
-
-                      default:
-                        path = action[_symbols.__path__] || [];
-                        let dispatch = (0, _vitrarius.compose)(...path.map(_optics.traverse), _optics.contort);
-                        return (0, _vitrarius.view)(dispatch, {
-                            state: state,
-                            sil: sil,
-                            action: action
-                        });
-                    }
-                }
-            }, function(module, exports, __webpack_require__) {
-                "use strict";
-                Object.defineProperty(exports, "__esModule", {
-                    value: true
-                });
-                exports.contort = contort;
-                exports.traverse = traverse;
-                exports.assert = assert;
-                exports.erase = erase;
-                var _vitrarius = __webpack_require__(0);
-                var _symbols = __webpack_require__(1);
-                function contort({state: state, sil: sil, action: action}) {
-                    let transitional = state;
-                    if (sil[_symbols.__reducers__][action.type]) {
-                        transitional = sil[_symbols.__reducers__][action.type](state, action);
-                    }
-                    if (transitional === undefined) {
-                        throw new Error("Reducer returned undefined; are you missing a return statement?");
-                    }
-                    if (transitional !== state) {
-                        Object.keys(sil).forEach(key => {
-                            if (!transitional.hasOwnProperty(key)) {
-                                sil[key][_symbols.__push__]({
-                                    done: true
-                                });
-                                delete sil[key];
-                            }
-                        });
-                        Object.keys(transitional).forEach(key => {
-                            if (!sil.hasOwnProperty(key)) {
-                                sil[_symbols.__create__](sil, key);
-                            }
-                        });
-                    }
-                    let itr = Object.keys(transitional)[Symbol.iterator]();
-                    let fun = frag => {
-                        let member = itr.next().value;
-                        return {
-                            state: frag,
-                            action: action,
-                            sil: sil[member] || sil[_symbols.__create__](sil, member)
-                        };
-                    };
-                    let final = (0, _vitrarius.view)((0, _vitrarius.compose)((0, _vitrarius.each)(), fun, contort), transitional);
-                    if (final != state) {
-                        sil[_symbols.__push__]({
-                            done: false,
-                            value: final
-                        });
-                    }
-                    return final;
-                }
-                function traverse(member) {
-                    return (0, _vitrarius.optic)(({state: state, sil: sil, action: action}, next) => {
-                        return (0, _vitrarius.view)((0, _vitrarius.compose)(member, fragment => {
-                            if (!sil[member]) {
-                                sil[_symbols.__create__](sil, member);
-                            }
-                            let ret = next({
-                                state: fragment || {},
-                                sil: sil[member],
-                                action: action
-                            });
-                            if (ret !== state) {
-                                sil[member][_symbols.__push__]({
-                                    done: false,
-                                    value: ret
-                                });
-                            }
-                            return ret;
-                        }), state);
-                    });
-                }
-                let blank = {};
-                let asObject = o => o instanceof Object ? o : undefined;
-                let asArray = a => a instanceof Array ? a : undefined;
-                function assert({state: state, sil: sil, val: val}) {
-                    return __assert__(state, sil, val);
-                }
-                function __assert__(state, sil, val) {
-                    let flag = state === undefined;
-                    if (asArray(val)) {
-                        if (!asArray(state)) {
-                            let res = val.map((elem, index) => {
-                                sil[_symbols.__create__](sil, index);
-                                return __assert__(undefined, sil[index], elem);
-                            });
-                            sil[_symbols.__push__]({
-                                value: res
-                            });
-                            return val;
-                        } else {
-                            return state;
-                        }
-                    } else if (asObject(val)) {
-                        let diff = {};
-                        Object.keys(val).forEach(key => {
-                            if (!sil.hasOwnProperty(key)) {
-                                flag = true;
-                                sil[_symbols.__create__](sil, key);
-                                diff[key] = __assert__(undefined, sil[key], val[key]);
-                            } else {
-                                let temp = __assert__(state[key], sil[key], val[key]);
-                                if (temp !== state[key]) {
-                                    flag = true;
-                                    diff[key] = temp;
-                                }
-                            }
-                        });
-                        if (flag || !asObject(state)) {
-                            var res = Object.assign({}, asObject(state) || blank, diff);
-                            sil[_symbols.__push__]({
-                                value: res
-                            });
-                            return res;
-                        } else {
-                            return state;
-                        }
-                    } else {
-                        if (flag) {
-                            sil[_symbols.__push__]({
-                                value: val
-                            });
-                            return val;
-                        } else {
-                            return state;
-                        }
-                    }
-                }
-                function erase(member) {
-                    return (0, _vitrarius.optic)(({state: state, sil: sil}) => {
-                        let _state = state;
-                        if (state.hasOwnProperty(member)) {
-                            _state = Object.assign({}, state);
-                            delete _state[member];
-                            sil[member][_symbols.__push__]({
-                                done: true
-                            });
-                            delete sil[member];
-                        }
-                        return _state;
-                    });
-                }
-            } ]);
-        });
-    }, function(module, exports, __webpack_require__) {
-        "use strict";
-        (function webpackUniversalModuleDefinition(root, factory) {
-            if (true) module.exports = factory(); else if (typeof define === "function" && define.amd) define([], factory); else if (typeof exports === "object") exports["vitrarius"] = factory(); else root["vitrarius"] = factory();
-        })(undefined, function() {
-            return function(modules) {
-                var installedModules = {};
-                function __webpack_require__(moduleId) {
-                    if (installedModules[moduleId]) {
-                        return installedModules[moduleId].exports;
-                    }
-                    var module = installedModules[moduleId] = {
-                        i: moduleId,
-                        l: false,
-                        exports: {}
-                    };
-                    modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
-                    module.l = true;
-                    return module.exports;
-                }
-                __webpack_require__.m = modules;
-                __webpack_require__.c = installedModules;
-                __webpack_require__.d = function(exports, name, getter) {
-                    if (!__webpack_require__.o(exports, name)) {
-                        Object.defineProperty(exports, name, {
-                            configurable: false,
-                            enumerable: true,
-                            get: getter
-                        });
-                    }
-                };
-                __webpack_require__.n = function(module) {
-                    var getter = module && module.__esModule ? function getDefault() {
-                        return module["default"];
-                    } : function getModuleExports() {
-                        return module;
-                    };
-                    __webpack_require__.d(getter, "a", getter);
-                    return getter;
-                };
-                __webpack_require__.o = function(object, property) {
-                    return Object.prototype.hasOwnProperty.call(object, property);
-                };
-                __webpack_require__.p = "";
-                return __webpack_require__(__webpack_require__.s = 0);
-            }([ function(module, exports, __webpack_require__) {
-                "use strict";
-                Object.defineProperty(exports, "__esModule", {
-                    value: true
-                });
-                exports.optic = optic;
-                exports.lens = lens;
-                exports.compose = compose;
-                exports.chain = chain;
-                exports.traversal = traversal;
-                class Optic {
-                    constructor(fun) {
-                        this.exec = fun;
-                    }
-                }
-                const id = id => id;
-                let view = exports.view = ((optic, target) => {
-                    if (optic instanceof Optic) {
-                        return optic.exec(target);
-                    } else {
-                        return compose(optic).exec(target);
-                    }
-                });
-                function trusted(operation) {
-                    return new Optic((target, itr) => {
-                        let {done: done, value: value} = itr ? itr.next() : {
-                            done: true
-                        };
-                        if (done) {
-                            return operation(target, id);
-                        } else {
-                            return operation(target, target => value.exec(target, itr));
-                        }
-                    });
-                }
-                function optic(operation) {
-                    return new Optic((target, itr) => {
-                        let {done: done, value: value} = itr ? itr.next() : {
-                            done: true
-                        };
-                        if (done) {
-                            return operation(target, id);
-                        } else {
-                            let safe = true;
-                            let next = target => {
-                                if (safe) {
-                                    safe = false;
-                                } else {
-                                    throw `The 'next' function was called twice; for library performance, optics calling 'next' more than once must be created with 'traversal' in place of 'optic'`;
-                                }
-                                return value.exec(target, itr);
-                            };
-                            let ret = operation(target, next);
-                            if (itr.return) {
-                                itr.return();
-                            }
-                            return ret;
-                        }
-                    });
-                }
-                function lens(distort, correct) {
-                    return trusted((o, n) => correct(o, n(distort(o))), false);
-                }
-                function compile(optics) {
-                    return optics.map(l => {
-                        if (typeof l === "string" || typeof l === "number") {
-                            return pluck(l);
-                        } else if (l instanceof Array) {
-                            return compose(...l);
-                        } else if (l instanceof Function) {
-                            return trusted((target, next) => {
-                                return next(l(target));
-                            });
-                        } else {
-                            return l;
-                        }
-                    });
-                }
-                function compose(...optics) {
-                    let lst = compile(optics);
-                    let itr = lst[Symbol.iterator]();
-                    itr.next();
-                    return new Optic((target, i) => {
-                        let ret = lst[0].exec(target, function*() {
-                            yield* itr;
-                            if (i !== undefined) {
-                                yield* i;
-                            }
-                        }());
-                        if (itr.return) {
-                            itr.return();
-                        }
-                        return ret;
-                    });
-                }
-                function chain(...optics) {
-                    return trusted((target, next) => {
-                        return next(compile(optics).reduce((acc, optic) => {
-                            return view(optic, acc);
-                        }, target));
-                    }, false);
-                }
-                let pluck = exports.pluck = (mem => lens(obj => obj[mem], (obj, val) => {
-                    if (obj[mem] === val) {
-                        return obj;
-                    } else {
-                        let r = obj instanceof Array ? obj.map(i => i) : Object.assign({}, obj);
-                        if (typeof mem === "number" && !obj instanceof Array) {
-                            throw new Error("The 'pluck' lens will not assign numeric member keys to non-Arrays");
-                        }
-                        if (typeof mem === "string" && !obj instanceof Object) {
-                            throw new Error("The 'pluck' lens will not assign string member keys to non-Objects");
-                        }
-                        r[mem] = val;
-                        return r;
-                    }
-                }));
-                let inject = exports.inject = ((prop, val) => lens(target => target, (target, ret) => {
-                    if (val === ret[prop]) {
-                        return target;
-                    } else {
-                        let r = Object.assign({}, ret);
-                        r[prop] = val;
-                        return r;
-                    }
-                }));
-                let remove = exports.remove = (prop => lens(obj => obj, (obj, ret) => {
-                    if (!prop in ret) {
-                        return ret;
-                    } else {
-                        let r = Object.assign({}, ret);
-                        delete r[prop];
-                        return r;
-                    }
-                }));
-                let where = exports.where = (predicate => {
-                    return optic((target, next) => {
-                        return predicate(target) ? next(target) : target;
-                    }, false);
-                });
-                function traversal(operation) {
-                    return new Optic((target, itr) => {
-                        let {done: done, value: value} = itr ? itr.next() : {
-                            done: true
-                        };
-                        if (done) {
-                            return operation(target, id => id);
-                        } else {
-                            let lst = [];
-                            while (!done) {
-                                lst.push(value);
-                                ({done: done, value: value} = itr.next());
-                            }
-                            let next = target => {
-                                let itr = lst[Symbol.iterator]();
-                                let {done: done, value: value} = itr.next();
-                                let ret = done ? target : value.exec(target, itr);
-                                if (itr.return) {
-                                    itr.return();
-                                }
-                                return ret;
-                            };
-                            return operation(target, next);
-                        }
-                    });
-                }
-                let each = exports.each = (() => {
-                    return traversal((target, next) => {
-                        let r;
-                        if (target instanceof Object) {
-                            r = Object.keys(target).reduce((a, k) => {
-                                a[k] = next(target[k]);
-                                return a;
-                            }, {});
-                            return Object.keys(r).reduce((a, k) => {
-                                return r[k] === a[k] ? a : r;
-                            }, target);
-                        } else if (target instanceof Array) {
-                            r = target.reduce((a, e, i) => {
-                                a[i] = next(e);
-                                return a;
-                            }, []);
-                            return r.reduce((a, e, i) => {
-                                return e === a[i] ? a : r;
-                            }, target);
-                        } else {
-                            return target;
-                        }
-                    });
-                });
-                let join = pattern => {
-                    let index = -1;
-                    let input, output, result = {};
-                    let keys = Object.keys(pattern);
-                    return trusted((target, next) => {
-                        if (index < 0) {
-                            input = target;
-                            index += 1;
-                        } else if (index < keys.length) {
-                            input[keys[index++]] = target;
-                        }
-                        if (index < keys.length) {
-                            result[keys[index]] = next(input[keys[index]]);
-                        } else {
-                            output = next(input);
-                        }
-                        return --index < 0 ? result : output[keys[index]];
-                    });
-                };
-                let parallelize = exports.parallelize = (pattern => {
-                    return new Optic((target, itr) => {
-                        let keys = Object.keys(pattern);
-                        let joiner = join(pattern);
-                        let r = compose(joiner, keys.map(k => [ pattern[k], joiner ])).exec(target, itr);
-                        return Object.keys(r).concat(keys).reduce((a, k) => {
-                            return r[k] === a[k] ? a : r;
-                        }, target);
-                    });
-                });
-            } ]);
-        });
+        module.exports = __WEBPACK_EXTERNAL_MODULE_20__;
     } ]);
 });
