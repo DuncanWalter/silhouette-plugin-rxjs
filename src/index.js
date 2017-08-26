@@ -9,7 +9,7 @@ import { symbols } from 'silhouette-core'
 
 // middleware for plugging in rxjs- not too difficult, 
 // even with lazy BehaviorSubjects for performance
-export default function(settings){ 
+let f = function(settings){ 
     return {
         prototype: {
             // State changes result in push calls which are designed to
@@ -43,3 +43,5 @@ export default function(settings){
         }
     }
 };
+
+export default f;

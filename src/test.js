@@ -1,7 +1,7 @@
 import tap from 'tap'
 import { create } from 'silhouette-core'
 import rxjsPlugin from './index.js'
-const sil = create( rxjsPlugin() );
+let sil = create( rxjsPlugin() );
 
 tap.test('rxjsPlugin tests', t => {
     t.true(sil);// 1
@@ -42,6 +42,28 @@ tap.test('rxjsPlugin tests', t => {
     sil.b.dispatch('whatever', {});
 
     t.true(b.c[3]); // 11
+
+
+
+
+    sil = create( rxjsPlugin() );
+    sil.define({view: {}});
+
+    sil.view.define({ a: [{v: 1}]});
+
+    let c = 0;
+    sil.view.a[0].v.asObservable().subscribe(v => c = v);
+    t.true(c === 1);
+    sil.view.a[0].asObservable().subscribe(v => c = v);
+    t.true(c instanceof Object);
+    sil.view.a.asObservable().subscribe(v => c = v);
+    t.true(c instanceof Array);
+    sil.view.asObservable().subscribe(v => c = v);
+    t.true(c instanceof Object);
+    sil.asObservable().subscribe(v => c = v);
+    t.true(c instanceof Object);
+
+    
 
 
     t.end();

@@ -1,1 +1,744 @@
-!function(t,r){"object"==typeof exports&&"object"==typeof module?module.exports=r():"function"==typeof define&&define.amd?define([],r):"object"==typeof exports?exports.silhouette=r():t.silhouette=r()}(this,function(){return(t=>{function r(s){if(e[s])return e[s].exports;var o=e[s]={i:s,l:!1,exports:{}};return t[s].call(o.exports,o,o.exports,r),o.l=!0,o.exports}var e={};return r.m=t,r.c=e,r.d=((t,e,s)=>{r.o(t,e)||Object.defineProperty(t,e,{configurable:!1,enumerable:!0,get:s})}),r.n=(t=>{var e=t&&t.__esModule?function(){return t.default}:function(){return t};return r.d(e,"a",e),e}),r.o=((t,r)=>Object.prototype.hasOwnProperty.call(t,r)),r.p="",r(r.s=8)})([(t,r,e)=>{"use strict";(t=>{var e="undefined"!=typeof window&&window,s="undefined"!=typeof self&&"undefined"!=typeof WorkerGlobalScope&&self instanceof WorkerGlobalScope&&self,o=void 0!==t&&t,i=e||o||s;r.root=i,(()=>{if(!i)throw new Error("RxJS could not find any global context (window, self, global)")})()}).call(r,e(12))},function(t,r,e){"use strict";function s(t){return t.reduce((t,r)=>t.concat(r instanceof b.UnsubscriptionError?r.errors:r),[])}var o=e(14),i=e(15),n=e(4),c=e(16),u=e(5),b=e(17),h=function(){function t(t){this.closed=!1,this._parent=null,this._parents=null,this._subscriptions=null,t&&(this._unsubscribe=t)}return t.prototype.unsubscribe=function(){var t,r=!1;if(!this.closed){var e=this,h=e._parent,p=e._parents,a=e._unsubscribe,l=e._subscriptions;this.closed=!0,this._parent=null,this._parents=null,this._subscriptions=null;for(var f=-1,y=p?p.length:0;h;)h.remove(this),h=++f<y&&p[f]||null;if(n.isFunction(a)&&(_=c.tryCatch(a).call(this))===u.errorObject&&(r=!0,t=t||(u.errorObject.e instanceof b.UnsubscriptionError?s(u.errorObject.e.errors):[u.errorObject.e])),o.isArray(l))for(f=-1,y=l.length;++f<y;){var d=l[f];if(i.isObject(d)){var _=c.tryCatch(d.unsubscribe).call(d);if(_===u.errorObject){r=!0,t=t||[];var v=u.errorObject.e;v instanceof b.UnsubscriptionError?t=t.concat(s(v.errors)):t.push(v)}}}if(r)throw new b.UnsubscriptionError(t)}},t.prototype.add=function(r){if(!r||r===t.EMPTY)return t.EMPTY;if(r===this)return this;var e=r;switch(typeof r){case"function":e=new t(r);case"object":if(e.closed||"function"!=typeof e.unsubscribe)return e;if(this.closed)return e.unsubscribe(),e;if("function"!=typeof e._addParent){var s=e;(e=new t)._subscriptions=[s]}break;default:throw new Error("unrecognized teardown "+r+" added to Subscription.")}return(this._subscriptions||(this._subscriptions=[])).push(e),e._addParent(this),e},t.prototype.remove=function(t){var r=this._subscriptions;if(r){var e=r.indexOf(t);-1!==e&&r.splice(e,1)}},t.prototype._addParent=function(t){var r=this,e=r._parent,s=r._parents;e&&e!==t?s?-1===s.indexOf(t)&&s.push(t):this._parents=[t]:this._parent=t},t.EMPTY=(t=>(t.closed=!0,t))(new t),t}();r.Subscription=h},(t,r,e)=>{"use strict";var s=e(0).root.Symbol;r.rxSubscriber="function"==typeof s&&"function"==typeof s.for?s.for("rxSubscriber"):"@@rxSubscriber",r.$$rxSubscriber=r.rxSubscriber},function(t,r,e){"use strict";var s=function(t,r){function e(){this.constructor=t}for(var s in r)r.hasOwnProperty(s)&&(t[s]=r[s]);t.prototype=null===r?Object.create(r):(e.prototype=r.prototype,new e)},o=e(4),i=e(1),n=e(6),c=e(2),u=function(t){function r(e,s,o){switch(t.call(this),this.syncErrorValue=null,this.syncErrorThrown=!1,this.syncErrorThrowable=!1,this.isStopped=!1,arguments.length){case 0:this.destination=n.empty;break;case 1:if(!e){this.destination=n.empty;break}if("object"==typeof e){e instanceof r?(this.destination=e,this.destination.add(this)):(this.syncErrorThrowable=!0,this.destination=new b(this,e));break}default:this.syncErrorThrowable=!0,this.destination=new b(this,e,s,o)}}return s(r,t),r.prototype[c.rxSubscriber]=function(){return this},r.create=((t,e,s)=>{var o=new r(t,e,s);return o.syncErrorThrowable=!1,o}),r.prototype.next=function(t){this.isStopped||this._next(t)},r.prototype.error=function(t){this.isStopped||(this.isStopped=!0,this._error(t))},r.prototype.complete=function(){this.isStopped||(this.isStopped=!0,this._complete())},r.prototype.unsubscribe=function(){this.closed||(this.isStopped=!0,t.prototype.unsubscribe.call(this))},r.prototype._next=function(t){this.destination.next(t)},r.prototype._error=function(t){this.destination.error(t),this.unsubscribe()},r.prototype._complete=function(){this.destination.complete(),this.unsubscribe()},r.prototype._unsubscribeAndRecycle=function(){var t=this,r=t._parent,e=t._parents;return this._parent=null,this._parents=null,this.unsubscribe(),this.closed=!1,this.isStopped=!1,this._parent=r,this._parents=e,this},r}(i.Subscription);r.Subscriber=u;var b=function(t){function r(r,e,s,i){t.call(this),this._parentSubscriber=r;var c,u=this;o.isFunction(e)?c=e:e&&(c=e.next,s=e.error,i=e.complete,e!==n.empty&&(u=Object.create(e),o.isFunction(u.unsubscribe)&&this.add(u.unsubscribe.bind(u)),u.unsubscribe=this.unsubscribe.bind(this))),this._context=u,this._next=c,this._error=s,this._complete=i}return s(r,t),r.prototype.next=function(t){if(!this.isStopped&&this._next){var r=this._parentSubscriber;r.syncErrorThrowable?this.__tryOrSetError(r,this._next,t)&&this.unsubscribe():this.__tryOrUnsub(this._next,t)}},r.prototype.error=function(t){if(!this.isStopped){var r=this._parentSubscriber;if(this._error)r.syncErrorThrowable?(this.__tryOrSetError(r,this._error,t),this.unsubscribe()):(this.__tryOrUnsub(this._error,t),this.unsubscribe());else{if(!r.syncErrorThrowable)throw this.unsubscribe(),t;r.syncErrorValue=t,r.syncErrorThrown=!0,this.unsubscribe()}}},r.prototype.complete=function(){var t=this;if(!this.isStopped){var r=this._parentSubscriber;if(this._complete){var e=()=>t._complete.call(t._context);r.syncErrorThrowable?(this.__tryOrSetError(r,e),this.unsubscribe()):(this.__tryOrUnsub(e),this.unsubscribe())}else this.unsubscribe()}},r.prototype.__tryOrUnsub=function(t,r){try{t.call(this._context,r)}catch(t){throw this.unsubscribe(),t}},r.prototype.__tryOrSetError=function(t,r,e){try{r.call(this._context,e)}catch(r){return t.syncErrorValue=r,t.syncErrorThrown=!0,!0}return!1},r.prototype._unsubscribe=function(){var t=this._parentSubscriber;this._context=null,this._parentSubscriber=null,t.unsubscribe()},r}(u)},(t,r,e)=>{"use strict";r.isFunction=function(t){return"function"==typeof t}},(t,r,e)=>{"use strict";r.errorObject={e:{}}},(t,r,e)=>{"use strict";r.empty={closed:!0,next(t){},error(t){throw t},complete(){}}},function(t,r,e){"use strict";var s=function(t,r){function e(){this.constructor=t}for(var s in r)r.hasOwnProperty(s)&&(t[s]=r[s]);t.prototype=null===r?Object.create(r):(e.prototype=r.prototype,new e)},o=function(t){function r(){var r=t.call(this,"object unsubscribed");this.name=r.name="ObjectUnsubscribedError",this.stack=r.stack,this.message=r.message}return s(r,t),r}(Error);r.ObjectUnsubscribedError=o},function(t,r,e){"use strict";Object.defineProperty(r,"__esModule",{value:!0});var s=e(9);const o=Symbol("stream");r.default=(t=>({Silhouette(t,r){let e=r.symbols,i=t.prototype,n=i[e.__push__];return i[e.__push__]=function({value:t,done:r}){n({value:t,done:r}),this[o]instanceof s.BehaviorSubject?r?this[o].complete():this[o].next(t):this[o]=t,r&&Object.keys(this).forEach(t=>this[t][e.__push__]({done:r}))},i.asObservable=function(){return this[o]instanceof s.BehaviorSubject||(this[o]=new s.BehaviorSubject(this[o])),this[o].asObservable()},t}}))},function(t,r,e){"use strict";var s=function(t,r){function e(){this.constructor=t}for(var s in r)r.hasOwnProperty(s)&&(t[s]=r[s]);t.prototype=null===r?Object.create(r):(e.prototype=r.prototype,new e)},o=e(10),i=e(7),n=function(t){function r(r){t.call(this),this._value=r}return s(r,t),Object.defineProperty(r.prototype,"value",{get(){return this.getValue()},enumerable:!0,configurable:!0}),r.prototype._subscribe=function(r){var e=t.prototype._subscribe.call(this,r);return e&&!e.closed&&r.next(this._value),e},r.prototype.getValue=function(){if(this.hasError)throw this.thrownError;if(this.closed)throw new i.ObjectUnsubscribedError;return this._value},r.prototype.next=function(r){t.prototype.next.call(this,this._value=r)},r}(o.Subject);r.BehaviorSubject=n},function(t,r,e){"use strict";var s=function(t,r){function e(){this.constructor=t}for(var s in r)r.hasOwnProperty(s)&&(t[s]=r[s]);t.prototype=null===r?Object.create(r):(e.prototype=r.prototype,new e)},o=e(11),i=e(3),n=e(1),c=e(7),u=e(19),b=e(2),h=function(t){function r(r){t.call(this,r),this.destination=r}return s(r,t),r}(i.Subscriber);r.SubjectSubscriber=h;var p=function(t){function r(){t.call(this),this.observers=[],this.closed=!1,this.isStopped=!1,this.hasError=!1,this.thrownError=null}return s(r,t),r.prototype[b.rxSubscriber]=function(){return new h(this)},r.prototype.lift=function(t){var r=new a(this,this);return r.operator=t,r},r.prototype.next=function(t){if(this.closed)throw new c.ObjectUnsubscribedError;if(!this.isStopped)for(var r=this.observers,e=r.length,s=r.slice(),o=0;o<e;o++)s[o].next(t)},r.prototype.error=function(t){if(this.closed)throw new c.ObjectUnsubscribedError;this.hasError=!0,this.thrownError=t,this.isStopped=!0;for(var r=this.observers,e=r.length,s=r.slice(),o=0;o<e;o++)s[o].error(t);this.observers.length=0},r.prototype.complete=function(){if(this.closed)throw new c.ObjectUnsubscribedError;this.isStopped=!0;for(var t=this.observers,r=t.length,e=t.slice(),s=0;s<r;s++)e[s].complete();this.observers.length=0},r.prototype.unsubscribe=function(){this.isStopped=!0,this.closed=!0,this.observers=null},r.prototype._trySubscribe=function(r){if(this.closed)throw new c.ObjectUnsubscribedError;return t.prototype._trySubscribe.call(this,r)},r.prototype._subscribe=function(t){if(this.closed)throw new c.ObjectUnsubscribedError;return this.hasError?(t.error(this.thrownError),n.Subscription.EMPTY):this.isStopped?(t.complete(),n.Subscription.EMPTY):(this.observers.push(t),new u.SubjectSubscription(this,t))},r.prototype.asObservable=function(){var t=new o.Observable;return t.source=this,t},r.create=((t,r)=>new a(t,r)),r}(o.Observable);r.Subject=p;var a=function(t){function r(r,e){t.call(this),this.destination=r,this.source=e}return s(r,t),r.prototype.next=function(t){var r=this.destination;r&&r.next&&r.next(t)},r.prototype.error=function(t){var r=this.destination;r&&r.error&&this.destination.error(t)},r.prototype.complete=function(){var t=this.destination;t&&t.complete&&this.destination.complete()},r.prototype._subscribe=function(t){return this.source?this.source.subscribe(t):n.Subscription.EMPTY},r}(p);r.AnonymousSubject=a},function(t,r,e){"use strict";var s=e(0),o=e(13),i=e(18),n=function(){function t(t){this._isScalar=!1,t&&(this._subscribe=t)}return t.prototype.lift=function(r){var e=new t;return e.source=this,e.operator=r,e},t.prototype.subscribe=function(t,r,e){var s=this.operator,i=o.toSubscriber(t,r,e);if(s?s.call(i,this.source):i.add(this.source?this._subscribe(i):this._trySubscribe(i)),i.syncErrorThrowable&&(i.syncErrorThrowable=!1,i.syncErrorThrown))throw i.syncErrorValue;return i},t.prototype._trySubscribe=function(t){try{return this._subscribe(t)}catch(r){t.syncErrorThrown=!0,t.syncErrorValue=r,t.error(r)}},t.prototype.forEach=function(t,r){var e=this;if(r||(s.root.Rx&&s.root.Rx.config&&s.root.Rx.config.Promise?r=s.root.Rx.config.Promise:s.root.Promise&&(r=s.root.Promise)),!r)throw new Error("no Promise impl found");return new r((r,s)=>{var o;o=e.subscribe(r=>{if(o)try{t(r)}catch(t){s(t),o.unsubscribe()}else t(r)},s,r)})},t.prototype._subscribe=function(t){return this.source.subscribe(t)},t.prototype[i.observable]=function(){return this},t.create=(r=>new t(r)),t}();r.Observable=n},function(t,r,e){"use strict";var s;s=function(){return this}();try{s=s||Function("return this")()||(0,eval)("this")}catch(t){"object"==typeof window&&(s=window)}t.exports=s},(t,r,e)=>{"use strict";var s=e(3),o=e(2),i=e(6);r.toSubscriber=function(t,r,e){if(t){if(t instanceof s.Subscriber)return t;if(t[o.rxSubscriber])return t[o.rxSubscriber]()}return t||r||e?new s.Subscriber(t,r,e):new s.Subscriber(i.empty)}},(t,r,e)=>{"use strict";r.isArray=Array.isArray||(t=>t&&"number"==typeof t.length)},(t,r,e)=>{"use strict";r.isObject=function(t){return null!=t&&"object"==typeof t}},function(t,r,e){"use strict";function s(){try{return o.apply(this,arguments)}catch(t){return i.errorObject.e=t,i.errorObject}}var o,i=e(5);r.tryCatch=function(t){return o=t,s}},function(t,r,e){"use strict";var s=function(t,r){function e(){this.constructor=t}for(var s in r)r.hasOwnProperty(s)&&(t[s]=r[s]);t.prototype=null===r?Object.create(r):(e.prototype=r.prototype,new e)},o=function(t){function r(r){t.call(this),this.errors=r;var e=Error.call(this,r?r.length+" errors occurred during unsubscription:\n  "+r.map((t,r)=>r+1+") "+t.toString()).join("\n  "):"");this.name=e.name="UnsubscriptionError",this.stack=e.stack,this.message=e.message}return s(r,t),r}(Error);r.UnsubscriptionError=o},(t,r,e)=>{"use strict";function s(t){var r,e=t.Symbol;return"function"==typeof e?e.observable?r=e.observable:(r=e("observable"),e.observable=r):r="@@observable",r}var o=e(0);r.getSymbolObservable=s,r.observable=s(o.root),r.$$observable=r.observable},function(t,r,e){"use strict";var s=function(t,r){function e(){this.constructor=t}for(var s in r)r.hasOwnProperty(s)&&(t[s]=r[s]);t.prototype=null===r?Object.create(r):(e.prototype=r.prototype,new e)},o=function(t){function r(r,e){t.call(this),this.subject=r,this.subscriber=e,this.closed=!1}return s(r,t),r.prototype.unsubscribe=function(){if(!this.closed){this.closed=!0;var t=this.subject,r=t.observers;if(this.subject=null,r&&0!==r.length&&!t.isStopped&&!t.closed){var e=r.indexOf(this.subscriber);-1!==e&&r.splice(e,1)}}},r}(e(1).Subscription);r.SubjectSubscription=o}])});
+(function webpackUniversalModuleDefinition(root, factory) {
+    if (typeof exports === "object" && typeof module === "object") module.exports = factory(require("rxjs/BehaviorSubject")); else if (typeof define === "function" && define.amd) define([ "rxjs/BehaviorSubject" ], factory); else if (typeof exports === "object") exports["silhouette"] = factory(require("rxjs/BehaviorSubject")); else root["silhouette"] = factory(root["rxjs/BehaviorSubject"]);
+})(this, function(__WEBPACK_EXTERNAL_MODULE_1__) {
+    return function(modules) {
+        var installedModules = {};
+        function __webpack_require__(moduleId) {
+            if (installedModules[moduleId]) {
+                return installedModules[moduleId].exports;
+            }
+            var module = installedModules[moduleId] = {
+                i: moduleId,
+                l: false,
+                exports: {}
+            };
+            modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+            module.l = true;
+            return module.exports;
+        }
+        __webpack_require__.m = modules;
+        __webpack_require__.c = installedModules;
+        __webpack_require__.d = function(exports, name, getter) {
+            if (!__webpack_require__.o(exports, name)) {
+                Object.defineProperty(exports, name, {
+                    configurable: false,
+                    enumerable: true,
+                    get: getter
+                });
+            }
+        };
+        __webpack_require__.n = function(module) {
+            var getter = module && module.__esModule ? function getDefault() {
+                return module["default"];
+            } : function getModuleExports() {
+                return module;
+            };
+            __webpack_require__.d(getter, "a", getter);
+            return getter;
+        };
+        __webpack_require__.o = function(object, property) {
+            return Object.prototype.hasOwnProperty.call(object, property);
+        };
+        __webpack_require__.p = "";
+        return __webpack_require__(__webpack_require__.s = 0);
+    }([ function(module, exports, __webpack_require__) {
+        "use strict";
+        Object.defineProperty(exports, "__esModule", {
+            value: true
+        });
+        exports.default = function(settings) {
+            return {
+                prototype: {
+                    [_silhouetteCore.symbols.__push__]: next => (function({value: value, done: done}) {
+                        next.call(this, {
+                            value: value,
+                            done: done
+                        });
+                        if (this[__stream__] instanceof _BehaviorSubject.BehaviorSubject) {
+                            if (done) {
+                                this[__stream__].complete();
+                            } else {
+                                this[__stream__].next(value);
+                            }
+                        } else {
+                            this[__stream__] = value;
+                        }
+                        if (done) {
+                            Reflect.ownKeys(this).forEach(key => this[key][_silhouetteCore.symbols.__push__]({
+                                done: done
+                            }));
+                        }
+                    }),
+                    asObservable: next => (function() {
+                        if (next) {
+                            throw new Error("RXJS plugin cannot overwrite asObservable properties defined by other plugins");
+                        }
+                        if (!(this[__stream__] instanceof _BehaviorSubject.BehaviorSubject)) {
+                            this[__stream__] = new _BehaviorSubject.BehaviorSubject(this[__stream__]);
+                        }
+                        return this[__stream__].asObservable();
+                    })
+                }
+            };
+        };
+        var _BehaviorSubject = __webpack_require__(1);
+        var _silhouetteCore = __webpack_require__(2);
+        const __stream__ = Symbol("stream");
+    }, function(module, exports) {
+        module.exports = __WEBPACK_EXTERNAL_MODULE_1__;
+    }, function(module, exports, __webpack_require__) {
+        "use strict";
+        (function webpackUniversalModuleDefinition(root, factory) {
+            if (true) module.exports = factory(__webpack_require__(3)); else if (typeof define === "function" && define.amd) define([ "vitrarius" ], factory); else if (typeof exports === "object") exports["silhouette"] = factory(require("vitrarius")); else root["silhouette"] = factory(root["vitrarius"]);
+        })(undefined, function(__WEBPACK_EXTERNAL_MODULE_0__) {
+            return function(modules) {
+                var installedModules = {};
+                function __webpack_require__(moduleId) {
+                    if (installedModules[moduleId]) {
+                        return installedModules[moduleId].exports;
+                    }
+                    var module = installedModules[moduleId] = {
+                        i: moduleId,
+                        l: false,
+                        exports: {}
+                    };
+                    modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+                    module.l = true;
+                    return module.exports;
+                }
+                __webpack_require__.m = modules;
+                __webpack_require__.c = installedModules;
+                __webpack_require__.d = function(exports, name, getter) {
+                    if (!__webpack_require__.o(exports, name)) {
+                        Object.defineProperty(exports, name, {
+                            configurable: false,
+                            enumerable: true,
+                            get: getter
+                        });
+                    }
+                };
+                __webpack_require__.n = function(module) {
+                    var getter = module && module.__esModule ? function getDefault() {
+                        return module["default"];
+                    } : function getModuleExports() {
+                        return module;
+                    };
+                    __webpack_require__.d(getter, "a", getter);
+                    return getter;
+                };
+                __webpack_require__.o = function(object, property) {
+                    return Object.prototype.hasOwnProperty.call(object, property);
+                };
+                __webpack_require__.p = "";
+                return __webpack_require__(__webpack_require__.s = 2);
+            }([ function(module, exports) {
+                module.exports = __WEBPACK_EXTERNAL_MODULE_0__;
+            }, function(module, exports, __webpack_require__) {
+                "use strict";
+                Object.defineProperty(exports, "__esModule", {
+                    value: true
+                });
+                const __DEFINE__ = exports.__DEFINE__ = Symbol("__DEFINE__");
+                const __REMOVE__ = exports.__REMOVE__ = Symbol("__REMOVE__");
+                const __path__ = exports.__path__ = Symbol("path");
+                const __reducers__ = exports.__reducers__ = Symbol("reducers");
+                const __push__ = exports.__push__ = Symbol("push");
+                const __store__ = exports.__store__ = Symbol("store");
+                const __root__ = exports.__root__ = Symbol("root");
+                const __create__ = exports.__create__ = Symbol("create");
+            }, function(module, exports, __webpack_require__) {
+                "use strict";
+                Object.defineProperty(exports, "__esModule", {
+                    value: true
+                });
+                exports.symbols = undefined;
+                exports.create = create;
+                var _vitrarius = __webpack_require__(0);
+                var _symbols = __webpack_require__(1);
+                var __symbols__ = _interopRequireWildcard(_symbols);
+                var _reducer = __webpack_require__(3);
+                function _interopRequireWildcard(obj) {
+                    if (obj && obj.__esModule) {
+                        return obj;
+                    } else {
+                        var newObj = {};
+                        if (obj != null) {
+                            for (var key in obj) {
+                                if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key];
+                            }
+                        }
+                        newObj.default = obj;
+                        return newObj;
+                    }
+                }
+                let symbols = exports.symbols = __symbols__;
+                function diff(pat, trg) {
+                    if (!(pat instanceof Object || pat instanceof Array)) {
+                        return trg !== undefined;
+                    }
+                    return Object.keys(pat).reduce((a, k) => a && trg[k] && diff(pat[k], trg[k]), trg !== undefined);
+                }
+                function syncQueue() {
+                    let active = false;
+                    let next = {};
+                    let last = next;
+                    return {
+                        enqueue(action) {
+                            last.value = action;
+                            last.next = {};
+                            last = last.next;
+                        },
+                        forEach(fun) {
+                            if (active) {
+                                return;
+                            }
+                            active = true;
+                            while (next.next) {
+                                fun(next.value);
+                                next = next.next;
+                            }
+                            active = false;
+                        }
+                    };
+                }
+                function defineSilhouette() {
+                    let actionQueue = syncQueue();
+                    class Silhouette {
+                        [_symbols.__create__](parent, member) {
+                            let sil = new Silhouette();
+                            sil[_symbols.__path__] = parent ? [ ...parent[_symbols.__path__], member ] : [];
+                            sil[_symbols.__reducers__] = {};
+                            if (parent !== undefined) {
+                                parent[member] = sil;
+                            }
+                            return sil;
+                        }
+                        define(val, ...path) {
+                            if (!(0, _vitrarius.view)((0, _vitrarius.compose)(...path.map(k => (0, _vitrarius.lens)(o => o[k], (o, r) => r)), diff.bind(null, val)), this)) {
+                                actionQueue.enqueue({
+                                    type: "__DEFINE__",
+                                    [_symbols.__DEFINE__]: true,
+                                    val: val,
+                                    path: [ ...this[_symbols.__path__], ...path ]
+                                });
+                                actionQueue.forEach(this[_symbols.__store__].dispatch);
+                            }
+                        }
+                        remove(...path) {
+                            actionQueue.enqueue({
+                                type: "__REMOVE__",
+                                [_symbols.__REMOVE__]: true,
+                                path: [ ...this[_symbols.__path__], ...path ]
+                            });
+                            actionQueue.forEach(this[_symbols.__store__].dispatch);
+                        }
+                        dispatch(type, payload) {
+                            actionQueue.enqueue(Object.assign({
+                                type: type
+                            }, payload));
+                            actionQueue.forEach(this[_symbols.__store__].dispatch);
+                        }
+                        extend(type, reducer, compose = false) {
+                            this[_symbols.__reducers__][type] = reducer;
+                        }
+                        [_symbols.__push__]() {}
+                    }
+                    return Silhouette;
+                }
+                function applyPlugin(base, plugin) {
+                    Reflect.ownKeys(plugin).forEach(key => {
+                        if (plugin[key] instanceof Function) {
+                            base[key] = plugin[key](base[key]);
+                        } else if (plugin[key] instanceof Object) {
+                            base[key] = applyPlugin(base[key] || {}, plugin[key]);
+                        } else {
+                            throw new Error("The plugin provided contained terminal properties which were not middleware functions.");
+                        }
+                    });
+                    return base;
+                }
+                function create(...plugins) {
+                    let Silhouette = defineSilhouette();
+                    let namespace = {
+                        Silhouette: Silhouette,
+                        prototype: Silhouette.prototype,
+                        reducer: _reducer.reducer.bind(Silhouette),
+                        createStore(reducer) {
+                            let state = {};
+                            return {
+                                dispatch(action) {
+                                    state = reducer(state, action);
+                                }
+                            };
+                        },
+                        createSil(store) {
+                            let sil = namespace.Silhouette.prototype[_symbols.__create__]();
+                            namespace.Silhouette.prototype[_symbols.__store__] = store;
+                            namespace.Silhouette.prototype[_symbols.__root__] = sil;
+                            namespace.Silhouette.created = true;
+                            return sil;
+                        }
+                    };
+                    plugins.reverse().forEach(plugin => {
+                        applyPlugin(namespace, plugin, namespace);
+                    });
+                    let store = namespace.createStore(namespace.reducer);
+                    return namespace.createSil(store);
+                }
+            }, function(module, exports, __webpack_require__) {
+                "use strict";
+                Object.defineProperty(exports, "__esModule", {
+                    value: true
+                });
+                exports.reducer = reducer;
+                var _vitrarius = __webpack_require__(0);
+                var _symbols = __webpack_require__(1);
+                var _optics = __webpack_require__(4);
+                function reducer(state = {}, action) {
+                    if (!this.created) {
+                        return state;
+                    }
+                    let path, payload, val, sil = this.prototype[_symbols.__root__];
+                    switch (true) {
+                      case action[_symbols.__DEFINE__]:
+                        ({val: val, path: path} = action);
+                        let _define = (0, _vitrarius.compose)(...path.map(_optics.traverse), o => Object.assign(o, {
+                            val: val
+                        }), _optics.assert);
+                        return (0, _vitrarius.view)(_define, {
+                            state: state,
+                            sil: sil
+                        });
+
+                      case action[_symbols.__REMOVE__]:
+                        ({path: path} = action);
+                        let eraser = (0, _optics.erase)(path.pop());
+                        let remove = (0, _vitrarius.compose)(...path.map(_optics.traverse), eraser);
+                        return (0, _vitrarius.view)(remove, {
+                            state: state,
+                            sil: sil
+                        });
+
+                      default:
+                        path = action[_symbols.__path__] || [];
+                        let dispatch = (0, _vitrarius.compose)(...path.map(_optics.traverse), _optics.contort);
+                        return (0, _vitrarius.view)(dispatch, {
+                            state: state,
+                            sil: sil,
+                            action: action
+                        });
+                    }
+                }
+            }, function(module, exports, __webpack_require__) {
+                "use strict";
+                Object.defineProperty(exports, "__esModule", {
+                    value: true
+                });
+                exports.contort = contort;
+                exports.traverse = traverse;
+                exports.assert = assert;
+                exports.erase = erase;
+                var _vitrarius = __webpack_require__(0);
+                var _symbols = __webpack_require__(1);
+                function contort({state: state, sil: sil, action: action}) {
+                    let transitional = state;
+                    if (sil[_symbols.__reducers__][action.type]) {
+                        transitional = sil[_symbols.__reducers__][action.type](state, action);
+                    }
+                    if (transitional === undefined) {
+                        throw new Error("Reducer returned undefined; are you missing a return statement?");
+                    }
+                    if (transitional !== state) {
+                        Object.keys(sil).forEach(key => {
+                            if (!transitional.hasOwnProperty(key)) {
+                                sil[key][_symbols.__push__]({
+                                    done: true
+                                });
+                                delete sil[key];
+                            }
+                        });
+                        Object.keys(transitional).forEach(key => {
+                            if (!sil.hasOwnProperty(key)) {
+                                sil[_symbols.__create__](sil, key);
+                            }
+                        });
+                    }
+                    let itr = Object.keys(transitional)[Symbol.iterator]();
+                    let fun = frag => {
+                        let member = itr.next().value;
+                        return {
+                            state: frag,
+                            action: action,
+                            sil: sil[member] || sil[_symbols.__create__](sil, member)
+                        };
+                    };
+                    let final = (0, _vitrarius.view)((0, _vitrarius.compose)((0, _vitrarius.each)(), fun, contort), transitional);
+                    if (final != state) {
+                        sil[_symbols.__push__]({
+                            done: false,
+                            value: final
+                        });
+                    }
+                    return final;
+                }
+                function traverse(member) {
+                    return (0, _vitrarius.optic)(({state: state, sil: sil, action: action}, next) => {
+                        return (0, _vitrarius.view)((0, _vitrarius.compose)(member, fragment => {
+                            if (!sil[member]) {
+                                sil[_symbols.__create__](sil, member);
+                            }
+                            let ret = next({
+                                state: fragment || {},
+                                sil: sil[member],
+                                action: action
+                            });
+                            if (ret !== state) {
+                                sil[member][_symbols.__push__]({
+                                    done: false,
+                                    value: ret
+                                });
+                            }
+                            return ret;
+                        }), state);
+                    });
+                }
+                let blank = {};
+                let asObject = o => o instanceof Object ? o : undefined;
+                let asArray = a => a instanceof Array ? a : undefined;
+                function assert({state: state, sil: sil, val: val}) {
+                    return __assert__(state, sil, val);
+                }
+                function __assert__(state, sil, val) {
+                    let flag = state === undefined;
+                    if (asArray(val)) {
+                        if (!asArray(state)) {
+                            let res = val.map((elem, index) => {
+                                sil[_symbols.__create__](sil, index);
+                                return __assert__(undefined, sil[index], elem);
+                            });
+                            sil[_symbols.__push__]({
+                                value: res
+                            });
+                            return val;
+                        } else {
+                            return state;
+                        }
+                    } else if (asObject(val)) {
+                        let diff = {};
+                        Object.keys(val).forEach(key => {
+                            if (!sil.hasOwnProperty(key)) {
+                                flag = true;
+                                sil[_symbols.__create__](sil, key);
+                                diff[key] = __assert__(undefined, sil[key], val[key]);
+                            } else {
+                                let temp = __assert__(state[key], sil[key], val[key]);
+                                if (temp !== state[key]) {
+                                    flag = true;
+                                    diff[key] = temp;
+                                }
+                            }
+                        });
+                        if (flag || !asObject(state)) {
+                            var res = Object.assign({}, asObject(state) || blank, diff);
+                            sil[_symbols.__push__]({
+                                value: res
+                            });
+                            return res;
+                        } else {
+                            return state;
+                        }
+                    } else {
+                        if (flag) {
+                            sil[_symbols.__push__]({
+                                value: val
+                            });
+                            return val;
+                        } else {
+                            return state;
+                        }
+                    }
+                }
+                function erase(member) {
+                    return (0, _vitrarius.optic)(({state: state, sil: sil}) => {
+                        let _state = state;
+                        if (state.hasOwnProperty(member)) {
+                            _state = Object.assign({}, state);
+                            delete _state[member];
+                            sil[member][_symbols.__push__]({
+                                done: true
+                            });
+                            delete sil[member];
+                        }
+                        return _state;
+                    });
+                }
+            } ]);
+        });
+    }, function(module, exports, __webpack_require__) {
+        "use strict";
+        (function webpackUniversalModuleDefinition(root, factory) {
+            if (true) module.exports = factory(); else if (typeof define === "function" && define.amd) define([], factory); else if (typeof exports === "object") exports["vitrarius"] = factory(); else root["vitrarius"] = factory();
+        })(undefined, function() {
+            return function(modules) {
+                var installedModules = {};
+                function __webpack_require__(moduleId) {
+                    if (installedModules[moduleId]) {
+                        return installedModules[moduleId].exports;
+                    }
+                    var module = installedModules[moduleId] = {
+                        i: moduleId,
+                        l: false,
+                        exports: {}
+                    };
+                    modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+                    module.l = true;
+                    return module.exports;
+                }
+                __webpack_require__.m = modules;
+                __webpack_require__.c = installedModules;
+                __webpack_require__.d = function(exports, name, getter) {
+                    if (!__webpack_require__.o(exports, name)) {
+                        Object.defineProperty(exports, name, {
+                            configurable: false,
+                            enumerable: true,
+                            get: getter
+                        });
+                    }
+                };
+                __webpack_require__.n = function(module) {
+                    var getter = module && module.__esModule ? function getDefault() {
+                        return module["default"];
+                    } : function getModuleExports() {
+                        return module;
+                    };
+                    __webpack_require__.d(getter, "a", getter);
+                    return getter;
+                };
+                __webpack_require__.o = function(object, property) {
+                    return Object.prototype.hasOwnProperty.call(object, property);
+                };
+                __webpack_require__.p = "";
+                return __webpack_require__(__webpack_require__.s = 0);
+            }([ function(module, exports, __webpack_require__) {
+                "use strict";
+                Object.defineProperty(exports, "__esModule", {
+                    value: true
+                });
+                exports.optic = optic;
+                exports.lens = lens;
+                exports.compose = compose;
+                exports.chain = chain;
+                exports.traversal = traversal;
+                class Optic {
+                    constructor(fun) {
+                        this.exec = fun;
+                    }
+                }
+                const id = id => id;
+                let view = exports.view = ((optic, target) => {
+                    if (optic instanceof Optic) {
+                        return optic.exec(target);
+                    } else {
+                        return compose(optic).exec(target);
+                    }
+                });
+                function trusted(operation) {
+                    return new Optic((target, itr) => {
+                        let {done: done, value: value} = itr ? itr.next() : {
+                            done: true
+                        };
+                        if (done) {
+                            return operation(target, id);
+                        } else {
+                            return operation(target, target => value.exec(target, itr));
+                        }
+                    });
+                }
+                function optic(operation) {
+                    return new Optic((target, itr) => {
+                        let {done: done, value: value} = itr ? itr.next() : {
+                            done: true
+                        };
+                        if (done) {
+                            return operation(target, id);
+                        } else {
+                            let safe = true;
+                            let next = target => {
+                                if (safe) {
+                                    safe = false;
+                                } else {
+                                    throw `The 'next' function was called twice; for library performance, optics calling 'next' more than once must be created with 'traversal' in place of 'optic'`;
+                                }
+                                return value.exec(target, itr);
+                            };
+                            let ret = operation(target, next);
+                            if (itr.return) {
+                                itr.return();
+                            }
+                            return ret;
+                        }
+                    });
+                }
+                function lens(distort, correct) {
+                    return trusted((o, n) => correct(o, n(distort(o))), false);
+                }
+                function compile(optics) {
+                    return optics.map(l => {
+                        if (typeof l === "string" || typeof l === "number") {
+                            return pluck(l);
+                        } else if (l instanceof Array) {
+                            return compose(...l);
+                        } else if (l instanceof Function) {
+                            return trusted((target, next) => {
+                                return next(l(target));
+                            });
+                        } else {
+                            return l;
+                        }
+                    });
+                }
+                function compose(...optics) {
+                    let lst = compile(optics);
+                    let itr = lst[Symbol.iterator]();
+                    itr.next();
+                    return new Optic((target, i) => {
+                        let ret = lst[0].exec(target, function*() {
+                            yield* itr;
+                            if (i !== undefined) {
+                                yield* i;
+                            }
+                        }());
+                        if (itr.return) {
+                            itr.return();
+                        }
+                        return ret;
+                    });
+                }
+                function chain(...optics) {
+                    return trusted((target, next) => {
+                        return next(compile(optics).reduce((acc, optic) => {
+                            return view(optic, acc);
+                        }, target));
+                    }, false);
+                }
+                let pluck = exports.pluck = (mem => lens(obj => obj[mem], (obj, val) => {
+                    if (obj[mem] === val) {
+                        return obj;
+                    } else {
+                        let r = obj instanceof Array ? obj.map(i => i) : Object.assign({}, obj);
+                        if (typeof mem === "number" && !obj instanceof Array) {
+                            throw new Error("The 'pluck' lens will not assign numeric member keys to non-Arrays");
+                        }
+                        if (typeof mem === "string" && !obj instanceof Object) {
+                            throw new Error("The 'pluck' lens will not assign string member keys to non-Objects");
+                        }
+                        r[mem] = val;
+                        return r;
+                    }
+                }));
+                let inject = exports.inject = ((prop, val) => lens(target => target, (target, ret) => {
+                    if (val === ret[prop]) {
+                        return target;
+                    } else {
+                        let r = Object.assign({}, ret);
+                        r[prop] = val;
+                        return r;
+                    }
+                }));
+                let remove = exports.remove = (prop => lens(obj => obj, (obj, ret) => {
+                    if (!prop in ret) {
+                        return ret;
+                    } else {
+                        let r = Object.assign({}, ret);
+                        delete r[prop];
+                        return r;
+                    }
+                }));
+                let where = exports.where = (predicate => {
+                    return optic((target, next) => {
+                        return predicate(target) ? next(target) : target;
+                    }, false);
+                });
+                function traversal(operation) {
+                    return new Optic((target, itr) => {
+                        let {done: done, value: value} = itr ? itr.next() : {
+                            done: true
+                        };
+                        if (done) {
+                            return operation(target, id => id);
+                        } else {
+                            let lst = [];
+                            while (!done) {
+                                lst.push(value);
+                                ({done: done, value: value} = itr.next());
+                            }
+                            let next = target => {
+                                let itr = lst[Symbol.iterator]();
+                                let {done: done, value: value} = itr.next();
+                                let ret = done ? target : value.exec(target, itr);
+                                if (itr.return) {
+                                    itr.return();
+                                }
+                                return ret;
+                            };
+                            return operation(target, next);
+                        }
+                    });
+                }
+                let each = exports.each = (() => {
+                    return traversal((target, next) => {
+                        let r;
+                        if (target instanceof Object) {
+                            r = Object.keys(target).reduce((a, k) => {
+                                a[k] = next(target[k]);
+                                return a;
+                            }, {});
+                            return Object.keys(r).reduce((a, k) => {
+                                return r[k] === a[k] ? a : r;
+                            }, target);
+                        } else if (target instanceof Array) {
+                            r = target.reduce((a, e, i) => {
+                                a[i] = next(e);
+                                return a;
+                            }, []);
+                            return r.reduce((a, e, i) => {
+                                return e === a[i] ? a : r;
+                            }, target);
+                        } else {
+                            return target;
+                        }
+                    });
+                });
+                let join = pattern => {
+                    let index = -1;
+                    let input, output, result = {};
+                    let keys = Object.keys(pattern);
+                    return trusted((target, next) => {
+                        if (index < 0) {
+                            input = target;
+                            index += 1;
+                        } else if (index < keys.length) {
+                            input[keys[index++]] = target;
+                        }
+                        if (index < keys.length) {
+                            result[keys[index]] = next(input[keys[index]]);
+                        } else {
+                            output = next(input);
+                        }
+                        return --index < 0 ? result : output[keys[index]];
+                    });
+                };
+                let parallelize = exports.parallelize = (pattern => {
+                    return new Optic((target, itr) => {
+                        let keys = Object.keys(pattern);
+                        let joiner = join(pattern);
+                        let r = compose(joiner, keys.map(k => [ pattern[k], joiner ])).exec(target, itr);
+                        return Object.keys(r).concat(keys).reduce((a, k) => {
+                            return r[k] === a[k] ? a : r;
+                        }, target);
+                    });
+                });
+            } ]);
+        });
+    } ]);
+});
