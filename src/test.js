@@ -36,8 +36,7 @@ tap.test('rxjsPlugin tests', t => {
     t.deepEqual(b, {c: [10, 20, 30], d: 4}); //  10
     
     sil.b.extend('whatever', state => {
-        state.c.push(1);
-        return state;
+        return Object.assign({}, state, {c: [...state.c, 1]});
     });
     sil.b.dispatch('whatever', {});
 
