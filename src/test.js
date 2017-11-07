@@ -46,6 +46,7 @@ tap.test('rxjsPlugin tests', t => {
 
 
 
+
     sil = create( rxjsPlugin() );
     sil.define({view: {}});
 

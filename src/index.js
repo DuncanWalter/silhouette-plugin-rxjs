@@ -69,9 +69,6 @@ export default function(settings){
                     });
                 }
 
-
-
-                
             },
             // we need to add a method for accessing the streams as an outsider.
             // could also use defineProperty and get to make it fancy, but
@@ -83,7 +80,6 @@ export default function(settings){
                 }
                 return this[__stream__].asObservable();
             },
-
         }
     }
 };

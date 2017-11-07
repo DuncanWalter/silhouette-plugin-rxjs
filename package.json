@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "rxjs": "^5.4.2",
-    "silhouette-core": "^2.0.1"
+    "silhouette-core": "^2.0.2"
   },
   "publishConfig": {
     "access": "public"
