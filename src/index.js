@@ -56,9 +56,8 @@ export default function(settings){
                     this[__stream__] = value;
                 }
 
-                // TODO: add clean done again
-                // // shuts down child nodes upon stream termination here
-                if(done){
+                // shuts down child nodes upon stream termination here
+                if(done && this[symbols.__children__]){
                     this[symbols.__children__].forEach(child => child[symbols.__push__]({ done }));
                 }
 
