@@ -2,6 +2,9 @@ import { BehaviorSubject } from 'rxjs/BehaviorSubject'
 
 // TODO schedule pushes for after reducer returns
 import { symbols } from 'silhouette-core'
+import { Container } from 'vitrarius'
+
+const { members, get } = Container;
 
 // non colliding instance props are important 
 const __stream__ = Symbol('stream'); 
@@ -58,7 +61,9 @@ export default function(settings){
 
                 // shuts down child nodes upon stream termination here
                 if(done && this[symbols.__children__]){
-                    this[symbols.__children__].forEach(child => child[symbols.__push__]({ done }));
+                    members(this[symbols.__children__]).forEach(m => 
+                        get(child, mem)[symbols.__push__]({ done })
+                    );
                 }
 
                 if(this === this[symbols.__root__]){

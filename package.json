@@ -31,7 +31,8 @@
   },
   "dependencies": {
     "rxjs": "^5.4.2",
-    "silhouette-core": "^2.0.2"
+    "silhouette-core": "^2.2.3",
+    "vitrarius": "^1.4.0"
   },
   "publishConfig": {
     "access": "public"
