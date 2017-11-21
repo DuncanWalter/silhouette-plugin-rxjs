@@ -27,12 +27,10 @@ function Queue(){
             last = last.next;
         },
         forEach(fun){
-            // console.log('starting');
             while(next.next){
                 fun(next.value);
                 next = next.next;
             }
-            // console.log('empty');
         },
     }
 }
@@ -62,13 +60,12 @@ export default function(settings){
                 // shuts down child nodes upon stream termination here
                 if(done && this[symbols.__children__]){
                     members(this[symbols.__children__]).forEach(m => 
-                        get(child, mem)[symbols.__push__]({ done })
+                        get(child, mem)[symbols.__push__]({ done: true })
                     );
                 }
 
                 if(this === this[symbols.__root__]){
                     queue.forEach(([ stream, value, done ]) => {
-                        // console.log('streaming', value)
                         done ? stream.complete() : stream.next(value);
                     });
                 }
@@ -78,11 +75,15 @@ export default function(settings){
             // could also use defineProperty and get to make it fancy, but
             // I think that might cut against the grain of RXJS philosophy? Not sure.
             asObservable: next => function(){
-                if( next ){ throw new Error('RXJS plugin should not overwrite asObservable properties defined by other plugins')}
                 if(!(this[__stream__] instanceof BehaviorSubject)){
                     this[__stream__] = new BehaviorSubject(this[__stream__]);
                 }
-                return this[__stream__].asObservable();
+                let b = new BehaviorSubject(this[__stream__].value);
+                this[__stream__].subscribe(v => b.next(v));
+                return b;
+            },
+            get stream(){
+                return this.asObservable();
             },
         }
     }

@@ -1,13 +1,13 @@
 # **RXJS Plugin for Silhouette**
 
-This plugin adds an `asObservable` function to all silhouettes which returns an rxjs observable representing the state behind the silhouette instance over time. The observables are created lazily for performance and originate from behavior subjects.
+This plugin adds an `asObservable` function to all silhouettes which returns an RXJS `BehaviorSubject` representing the state slice within the silhouette instance over time. The observables are created lazily, automatically end subscriptions, and can also be acquired using using a `stream` getter property.
 
 ``` javascript
 import { create } from 'silhouette-core'
 import rxjsPlugin from 'silhouette-plugin-rxjs'
 
-const sil = create(rxjsPlugin());
+const sil = create( rxjsPlugin() );
 
-sil.asObservable().subscribe(slice => console.log(slice));
-// > { }
+sil.stream.subscribe(v => console.log(v)); // > {}
+console.log(sil.stream.value); // > {}
 ```

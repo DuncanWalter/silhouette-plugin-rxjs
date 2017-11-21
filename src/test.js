@@ -14,10 +14,10 @@ tap.test('rxjsPlugin tests', t => {
     let a = 0;
     let b = undefined;
 
-    sil.a.asObservable().subscribe(val => a = val);
-    sil.b.asObservable().subscribe(val => b = val);
-    sil.a.asObservable().subscribe(val => incra++);
-    sil.b.asObservable().subscribe(val => incrb++);
+    sil.a.stream.subscribe(val => a = val);
+    sil.b.stream.subscribe(val => b = val);
+    sil.a.stream.subscribe(val => incra++);
+    sil.b.stream.subscribe(val => incrb++);
 
     t.same(a, 3); // 4
     let aa = incra;
@@ -53,16 +53,15 @@ tap.test('rxjsPlugin tests', t => {
     sil.view.bind('', __ => ({ a: [{v: 1}]}));
 
     let c = 0;
-    sil.view.a[0].v.asObservable().subscribe(v => c = v);
+    sil.view.a[0].v.stream.subscribe(v => c = v);
     t.true(c === 1);
-    sil.view.a[0].asObservable().subscribe(v => c = v);
+    sil.view.a[0].stream.subscribe(v => c = v);
     t.true(c instanceof Object);
-    sil.view.a.asObservable().subscribe(v => c = v);
+    sil.view.a.stream.subscribe(v => c = v);
     t.true(c instanceof Array);
-    sil.view.asObservable().subscribe(v => c = v);
+    sil.view.stream.subscribe(v => c = v);
     t.true(c instanceof Object);
-    sil.asObservable().subscribe(v => c = v);
-    t.true(c instanceof Object);
+    t.true(sil.stream.value instanceof Object);
 
     
 
